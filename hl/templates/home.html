@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block body %}
+
+
+<div id="nav">
+    Contacts
+    {% for i in key %}
+        <div class="chats"><a href="/chat/{{i}}"> {{i}} </a></div>
+    {% endfor %}
+</div>
+<div class="addbutton">
+
+        <a href="new"><button type="submit">+</button></a>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{% endblock body %}

@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block body %}
+
+
+Chatting with {{key}}<br><br>
+
+{% for i in chats %}
+{{i}}<br>
+{% endfor %}
+
+<div id="display"></div>
+
+<form method="POST" action="/chat/{{key}}">
+  {% csrf_token %}
+  <input type="text" placeholder="Enter your message" name="message">
+  <input type="submit"> 
+</form>
+
+
+
+
+
+
+<script>
+  var xhr = new XMLHttpRequest();
+  setInterval(function(){
+    xhr.open('GET', '/chatmn/{{key}}/{{noofmessages}}');
+    xhr.onload = function() {
+      if (xhr.status === 200) {
+        var response = JSON.parse(xhr.responseText);
+        var myList = response.messages;
+        var listContainer = document.getElementById("display");
+        var listHTML = "";
+        for (var i = 0; i < myList.length; i++) {
+          listHTML += '<div id="messtxt">'+myList[i] + "</div><br>";
+        }
+        listContainer.innerHTML = listHTML;
+      } else {
+        console.log('Request failed. Returned status of ' + xhr.status);
+      }
+    };
+    xhr.send();
+  }, 2000);
+</script>
+
+
+{% endblock %}

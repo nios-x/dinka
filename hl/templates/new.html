@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+
+{% block body %}
+<a href="/">Back</a>
+<form method="POST" action="/new">
+    {% csrf_token %}
+    <label for="dom">Enter Email</label><br>
+    <input type="text" name="email">
+        
+    <button id="dom" type="submit">ADD</button>    
+</form>
+{% endblock body %}

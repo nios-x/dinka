@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NIOS</title>
+
+
+    <style>
+        body{
+            background: linear-gradient(135deg, rgb(255, 0, 115), cyan, rgb(165, 40, 255));
+            background-repeat: no-repeat;
+            height: 1080px;    
+            width: 100%;
+            overflow: hidden;
+        }
+        #navleft{
+            float: right;
+            margin: 10px 20px 10px 10px;
+            background: white;
+            padding: 3px;
+            border-radius: 5px;
+            border: 1px blueviolet solid;
+            
+        }
+        /*<link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        
+        <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@600;700&family=Poppins:wght@300&display=swap" rel="stylesheet">
+        */
+        #navleft a{
+            color: black;
+            text-decoration: none;
+            padding: 2.5px;
+            font-family: comfort;
+            margin: 1px;
+            font-family: 'Poppins', sans-serif;
+        }
+        #container{
+            background: linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.75));
+            margin: 20px;
+            border-radius: 10px;
+            padding-top: 2.5px;
+        }       
+        #icon{
+            width: 25%;
+            margin-left: 20px;
+            color: white;
+            font-size: 42px;
+            font-family: 'Comfortaa', cursive;
+
+        } 
+        .chats{
+            padding: 3px 6px 3px 6px;
+            background-color: aqua;
+            width: min-content;
+            margin: 6px;
+            font-size: 20px;
+            border-radius: 5px;
+            
+            font-family: 'Poppins', sans-serif;
+        }
+        .chats a{
+            text-decoration: none;
+        }
+
+            
+            
+            
+        
+    </style>
+</head>
+<body>
+    <div id="icon">Dinka Chats  
+    </div>
+    <div id="navleft">
+        <a href="/logout">Logout <b>{{request.user}}</b></a>
+    </div>
+    
+    <div id="container">
+    {% block body %}{% endblock body %}
+    </div>
+</body>
+</html>

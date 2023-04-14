@@ -1,0 +1,25 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NIOS</title>
+</head>
+<body>
+
+<form method="POST" action="/login">
+        {% csrf_token %}
+       
+        <h1> sign in</h1>
+        <label for="inputEmail">Username</label>
+        <input type="text" id="inputEmail" name="username" class="form-control" placeholder="Username" required
+            autofocus>
+        <br>    
+        <label for="inputPassword">Password</label>
+        <input type="password" id="inputPassword" name="password" class="form-control" placeholder="Password" required>
+        <button type="submit">Sign in</button>
+        
+    </form>
+
+</body>
+</html>
