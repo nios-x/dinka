@@ -1,12 +1,11 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/pages/api/auth/[...nextauth]";
 import prisma from "@/lib/prisma";
 import ShowPost from "@/components/Posts/ShowPost";
+import { auth } from "@/auth";
 
-export default async function Page({ params }:any) {
+export default async function Page({ params }: any) {
   const { id } = await params;
 
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session?.user?.email) {
     return <div>Unauthorized</div>;
   }
@@ -27,7 +26,7 @@ export default async function Page({ params }:any) {
         select: {
           name: true,
           pic: true,
-          id:true,
+          id: true,
         },
       },
       likes: {
@@ -41,7 +40,7 @@ export default async function Page({ params }:any) {
               id: true,
               name: true,
               image: true,
-              pic:true
+              pic: true,
             },
           },
         },

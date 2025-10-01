@@ -1,22 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import { authOptions } from "@/pages/api/auth/[...nextauth]";
-import { getServerSession } from "next-auth";
+import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 
 export async function POST(req: NextRequest) {
-  const session: any = await getServerSession(authOptions);
-  
+  const session: any = await auth();
+
   if (!session || !session.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const {id} = await req.json();
+  const { id } = await req.json();
 
   const userId = session.user.id;
 
   // Step 1: Get user details, followers and following relations
   const user = await prisma.user.findUnique({
-    where: { id: id?id:userId },
+    where: { id: id ? id : userId },
     select: {
       id: true,
       name: true,
@@ -67,7 +66,7 @@ export async function POST(req: NextRequest) {
   const followingCount = user.following.length;
 
   const topFollowers = user.followers
-    .map(f => ({
+    .map((f) => ({
       id: f.src.id,
       name: f.src.name,
       image: f.src.image,
@@ -77,7 +76,7 @@ export async function POST(req: NextRequest) {
     .slice(0, 3);
 
   const topFollowing = user.following
-    .map(f => ({
+    .map((f) => ({
       id: f.dest.id,
       name: f.dest.name,
       image: f.dest.pic,
@@ -91,7 +90,9 @@ export async function POST(req: NextRequest) {
       id: user.id,
       name: user.name,
       username: user.username,
-      image: user.pic||"https://imgs.search.brave.com/XGLf_1PQgMe663J8lzlj5Q43AOJUWIEyTIP1nI4rTT0/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9jZG4z/ZC5pY29uc2NvdXQu/Y29tLzNkL3ByZW1p/dW0vdGh1bWIvdXNl/ci0zZC1pbGx1c3Ry/YXRpb24tZG93bmxv/YWQtaW4tcG5nLWJs/ZW5kLWZieC1nbHRm/LWZpbGUtZm9ybWF0/cy0tYXZhdGFyLXBy/b2ZpbGUtYWNjb3Vu/dC1pbnRlcmZpY29u/LXNldC0yLWxpZ2h0/LXBhY2staW50ZXJm/YWNlLWlsbHVzdHJh/dGlvbnMtMzEwNTI2/NS5wbmc" ,
+      image:
+        user.pic ||
+        "https://imgs.search.brave.com/XGLf_1PQgMe663J8lzlj5Q43AOJUWIEyTIP1nI4rTT0/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9jZG4z/ZC5pY29uc2NvdXQu/Y29tLzNkL3ByZW1p/dW0vdGh1bWIvdXNl/ci0zZC1pbGx1c3Ry/YXRpb24tZG93bmxv/YWQtaW4tcG5nLWJs/ZW5kLWZieC1nbHRm/LWZpbGUtZm9ybWF0/cy0tYXZhdGFyLXBy/b2ZpbGUtYWNjb3Vu/dC1pbnRlcmZpY29u/LXNldC0yLWxpZ2h0/LXBhY2staW50ZXJm/YWNlLWlsbHVzdHJh/dGlvbnMtMzEwNTI2/NS5wbmc",
       bio: user.bio,
       createdAt: user.createdAt,
     },

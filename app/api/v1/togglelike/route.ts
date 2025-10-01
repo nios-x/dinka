@@ -1,18 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { authOptions } from "@/pages/api/auth/[...nextauth]";
 import prisma from "@/lib/prisma";
-import { getServerSession } from "next-auth";
+import { auth } from "@/auth";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const session:any = await getServerSession(authOptions);
+  const session: any = await auth();
 
-  if (!session || !session.user || !session.user.id ) {
+  if (!session || !session.user || !session.user.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { id, whatToDo } = body;
-  console.log(id, whatToDo)
+  console.log(id, whatToDo);
   if (typeof id !== "number" || typeof whatToDo !== "boolean") {
     return NextResponse.json({ error: "Invalid input" }, { status: 400 });
   }

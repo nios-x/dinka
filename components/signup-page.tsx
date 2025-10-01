@@ -1,98 +1,95 @@
-"use client"
+"use client";
 
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import dinkaconfig from "@/dinka-config"
-import { Toaster } from "@/components/ui/sonner"
-import { toast } from "sonner"
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import dinkaconfig from "@/dinka-config";
+import { Toaster } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSeparator,
   InputOTPSlot,
-} from "@/components/ui/input-otp"
+} from "@/components/ui/input-otp";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import Link from "next/link"
-import { useState } from "react"
-import { useSession, signIn, signOut } from "next-auth/react"
-import { useRouter } from "next/navigation"
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { signIn, useSession } from "next-auth/react";
+import { signOut } from "@/auth";
 
-export function LoginForm({
-  className,
-  ...props
-}:any) {
-  const [stage, setStage] = useState(props.stage || 0)
-  const [otp, setOtp] = useState("")
+export function LoginForm({ className, ...props }: any) {
+  const [stage, setStage] = useState(props.stage || 0);
+  const [otp, setOtp] = useState("");
   const [credentials, setCredentials] = useState({
     email: "",
-    password: ""
-  })
-  const { data: session } = useSession()
-  const router = useRouter()
-   if (session) {
+    password: "",
+  });
+  const { data: session } = useSession();
+  const router = useRouter();
+  if (session) {
     return (
-       <div className="text-center ">
+      <div className="text-center ">
         Signed in as {session?.user?.email} <br />
         <button onClick={() => signOut()}>Sign out</button>
       </div>
-    )
+    );
   }
 
   const handleChange = (e: any) => {
     setCredentials((cred) => ({
       ...cred,
       [e.target.name]: e.target.value,
-    }))
-  }
+    }));
+  };
 
   const handleSign = async (e: any) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (stage === 0) {
       const response = await fetch("/api/v1/auth/signup", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ ...credentials, stage })
-      })
+        body: JSON.stringify({ ...credentials, stage }),
+      });
 
-      const data = await response.json()
+      const data = await response.json();
       if (data.error) {
-        toast.error(data.error)
-        return
+        toast.error(data.error);
+        return;
       }
 
       if (data.success && data.stage !== undefined) {
-        setStage(data.stage)
+        setStage(data.stage);
       }
     }
-      if (stage === 1) {
-          const res = await signIn("email-otp", {
-            email: credentials.email,
-            otp: otp,
-            password: credentials.password,
-            redirect: true,
-            callbackUrl: "/"
-            });
+    if (stage === 1) {
+      const res = await signIn("email-otp", {
+        email: credentials.email,
+        otp: otp,
+        password: credentials.password,
+        redirect: true,
+        callbackUrl: "/",
+      });
 
-            if (res?.error) {
-              toast.error("OTP Login failed.");
-            } else {
-              toast.success("Logged in!");
-        }
+      if (res?.error) {
+        toast.error("OTP Login failed.");
+      } else {
+        toast.success("Logged in!");
       }
-      
     }
-  
+  };
+
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
@@ -113,7 +110,13 @@ export function LoginForm({
                       {/* Apple Logo */}
                       Login with Apple
                     </Button>
-                    <Button variant="outline" className="w-full" onClick={()=>{ signIn("google",{    callbackUrl: "/"});}}>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => {
+                        signIn("google", { callbackUrl: "/" });
+                      }}
+                    >
                       {/* Google Logo */}
                       Login with Google
                     </Button>
@@ -188,14 +191,19 @@ export function LoginForm({
                 {[0, 1, 2].map((e) => (
                   <span
                     key={e}
-                    className={`h-2 w-2 rounded-full ${e > stage ? "bg-zinc-300" : "bg-zinc-900"}`}
+                    className={`h-2 w-2 rounded-full ${
+                      e > stage ? "bg-zinc-300" : "bg-zinc-900"
+                    }`}
                   />
                 ))}
               </div>
 
               <div className="text-center text-sm">
                 Have an Account?{" "}
-                <Link href={dinkaconfig.links.login} className="underline underline-offset-4">
+                <Link
+                  href={dinkaconfig.links.login}
+                  className="underline underline-offset-4"
+                >
                   Login
                 </Link>
               </div>
@@ -206,9 +214,12 @@ export function LoginForm({
 
       <div className="text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">
         By clicking continue, you agree to our{" "}
-        <Link href={dinkaconfig.links["terms-of-service"]}>Terms of Service</Link>{" "}
-        and <Link href={dinkaconfig.links["privacy-policy"]}>Privacy Policy</Link>.
+        <Link href={dinkaconfig.links["terms-of-service"]}>
+          Terms of Service
+        </Link>{" "}
+        and{" "}
+        <Link href={dinkaconfig.links["privacy-policy"]}>Privacy Policy</Link>.
       </div>
     </div>
-  )
+  );
 }

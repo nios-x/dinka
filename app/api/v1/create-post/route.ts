@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import cloudinary from "@/lib/cloudinary";
-import { authOptions } from "@/pages/api/auth/[...nextauth]";
-import { getServerSession } from "next-auth";
+import { auth } from "@/auth";
 
 export const POST = async (req: NextRequest) => {
   try {
@@ -12,8 +11,8 @@ export const POST = async (req: NextRequest) => {
     const data = strtitle ? JSON.parse(strtitle.toString()) : {};
     const title = data.title || "";
 
-    const session = await getServerSession(authOptions);
-    console.log(session)
+    const session = await auth();
+
     if (!session || !session.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -25,17 +24,20 @@ export const POST = async (req: NextRequest) => {
           mediaurl: "",
           //@ts-ignore
           authorId: session.user.id,
-          
-        },include:{
-        author:{
-          select:{
-            name:true
-          }
-        }
-      }
+        },
+        include: {
+          author: {
+            select: {
+              name: true,
+            },
+          },
+        },
       });
 
-      return NextResponse.json({ message: "Post created", data: post }, { status: 200 });
+      return NextResponse.json(
+        { message: "Post created", data: post },
+        { status: 200 }
+      );
     }
 
     const arrayBuffer = await file.arrayBuffer();
@@ -65,16 +67,20 @@ export const POST = async (req: NextRequest) => {
         mediaurl: uploadResult.url,
         //@ts-ignore
         authorId: session.user.id,
-      },include:{
-        author:{
-          select:{
-            name:true
-          }
-        }
-      }
+      },
+      include: {
+        author: {
+          select: {
+            name: true,
+          },
+        },
+      },
     });
 
-    return NextResponse.json({ message: "Uploaded", data: post }, { status: 200 });
+    return NextResponse.json(
+      { message: "Uploaded", data: post },
+      { status: 200 }
+    );
   } catch (error: any) {
     console.error("Upload failed:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });

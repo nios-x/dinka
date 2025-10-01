@@ -1,10 +1,9 @@
+import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
-import { authOptions } from "@/pages/api/auth/[...nextauth]";
-import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
-  const session: any = await getServerSession(authOptions);
+  const session: any = await auth();
   if (!session || !session.user?.id)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -17,8 +16,8 @@ export async function POST(req: NextRequest) {
       where: {
         srcid: friendId,
         destid: myId,
-        type: "Follower"
-      }
+        type: "Follower",
+      },
     });
 
     // Optionally: Remove reverse entry too if you added symmetric rows
@@ -26,8 +25,8 @@ export async function POST(req: NextRequest) {
       where: {
         srcid: myId,
         destid: friendId,
-        type: "Follower"
-      }
+        type: "Follower",
+      },
     });
 
     return NextResponse.json({ success: true });

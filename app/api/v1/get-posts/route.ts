@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { authOptions } from "@/pages/api/auth/[...nextauth]";
-import { getServerSession } from "next-auth";
+import { auth } from "@/auth";
 
 export const GET = async (req: NextRequest) => {
   const { searchParams } = new URL(req.url);
-  const page = parseInt(searchParams.get('page') || '0');
+  const page = parseInt(searchParams.get("page") || "0");
   const session = await getServerSession(authOptions);
-  
-  
+
   if (!session || !session.user?.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -25,8 +23,8 @@ export const GET = async (req: NextRequest) => {
   }
 
   const posts = await prisma.post.findMany({
-    skip:page*5,
-    take:5,
+    skip: page * 5,
+    take: 5,
 
     orderBy: {
       createdAt: "desc",
@@ -35,19 +33,19 @@ export const GET = async (req: NextRequest) => {
       author: {
         select: {
           name: true,
-          pic:true,
-          id:true
+          pic: true,
+          id: true,
         },
       },
       likes: {
         where: {
-          id: currentUser.id, 
+          id: currentUser.id,
         },
         select: {
           id: true,
         },
       },
-      
+
       _count: {
         select: {
           likes: true,
@@ -57,8 +55,8 @@ export const GET = async (req: NextRequest) => {
   });
   const postsWithLikeStatus = posts.map((post) => ({
     ...post,
-    isLiked: post.likes.length > 0, 
-    likes: post._count.likes,      
+    isLiked: post.likes.length > 0,
+    likes: post._count.likes,
   }));
 
   return NextResponse.json({ posts: postsWithLikeStatus });
