@@ -229,7 +229,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "C:\\Users\\dkjdi\\Desktop\\dinka\\generated\\prisma",
+      "value": "/Users/tiyajain/Desktop/hacktoberfest/dinka/generated/prisma",
       "fromEnvVar": null
     },
     "config": {
@@ -238,12 +238,12 @@ const config = {
     "binaryTargets": [
       {
         "fromEnvVar": null,
-        "value": "windows",
+        "value": "darwin-arm64",
         "native": true
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "C:\\Users\\dkjdi\\Desktop\\dinka\\prisma\\schema.prisma",
+    "sourceFilePath": "/Users/tiyajain/Desktop/hacktoberfest/dinka/prisma/schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
@@ -257,7 +257,7 @@ const config = {
     "db"
   ],
   "activeProvider": "postgresql",
-  "postinstall": false,
+  "postinstall": true,
   "inlineDatasources": {
     "db": {
       "url": {
