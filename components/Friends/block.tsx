@@ -27,7 +27,7 @@ export default function PersonCard({
   
 }: Props) {
   return (
-    <div className="border rounded-2xl p-4 max-w-xl mx-3">
+    <div className="border rounded-2xl p-4 max-w-xl mx-3 py-1">
       <div className="flex gap-3 items-center ">
         <Link href={`/profile?id=${person.id}`}>
         <div className="w-10 h-10 rounded-full relative overflow-hidden">
