@@ -13,7 +13,7 @@ export default function Posts({
   fetchPost: any;
 }) {
   return (
-    <div className='px-2'>
+    <div className=''>
       <InfiniteScroll
         next={fetchPost} // Pass query param to your fetch function if needed
         dataLength={posts.length}

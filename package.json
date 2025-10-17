@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@faker-js/faker": "^10.1.0",
     "@gsap/react": "^2.1.2",
     "@heroicons/react": "^2.2.0",
     "@prisma/client": "^6.12.0",

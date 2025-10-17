@@ -149,6 +149,12 @@ model Chats {
   @@index([createdAt])
 }
 
+enum ChatType {
+  Message
+  Call
+  VideoCall
+}
+
 enum Viewers {
   Public
   Followers
@@ -162,10 +168,4 @@ enum Relationship {
 enum Provider {
   Google
   Email
-}
-
-enum ChatType {
-  Message
-  Call
-  VideoCall
 }

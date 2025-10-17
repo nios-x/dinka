@@ -56,7 +56,7 @@ export default function Post({
   }[visibility];
   console.log(author)
   return (
-    <div className="rounded-xl mb-5   p-4 w-full max-w-xl mx-auto space-y-2 transition-all duration-300 bg-background border dark:bg-input/30 dark:border-input">
+    <div className=" mb-5   p-4 w-full max-w-xl mx-auto x transition-all duration-300 bg-[#ffffff]">
       <div className="flex items-start justify-between">
           <Link href={`/profile?id=${authorId}`}>
         <div className="w-max flex items-center">
@@ -121,37 +121,44 @@ export default function Post({
       )}
 
       {/* Buttons */}
-      <div className="flex items-center justify-evenly w-full gap-2 pt-3 px-1.5 text-zinc-600">
-        <button
-          onClick={() => handleLike(id, !isLiked)}
-          type="button"
-          aria-label="Love"
-          className={`${
-            isLiked
-              ? "text-white bg-[linear-gradient(45deg,red,#ff00bc)]"
-              : "text-rose-500   bg-zinc-100" 
-          } transition   cursor-pointer active:scale-105 gap-1 py-3 px-6 rounded-full w-1/3 flex justify-center items-center`}
-        >
-          <Heart fill="white" className="w-5 h-5" strokeWidth={2.4} />
-          <span className="text-sm">{likes ?likes :""}</span>
-        </button>
+<div className="flex items-center justify-evenly w-1/2 gap-2 pt-3 px-1.5 text-zinc-600">
+  {/* Like Button */}
+  <button
+    onClick={() => handleLike(id, !isLiked)}
+    type="button"
+    aria-label="Love"
+    className={`flex items-center gap-1 transition-all duration-150 rounded-md px-3 py-2 ${
+      isLiked ? "text-rose-500 bg-rose-100" : "text-zinc-600 hover:text-rose-400 hover:bg-zinc-100"
+    }`}
+  >
+    <Heart
+      fill={isLiked ? "currentColor" : "none"}
+      className="w-5 h-5"
+      strokeWidth={2.4}
+    />
+    <span className="text-sm">{likes ? likes : ""}</span>
+  </button>
 
-        <Link
-          href={`/postid/${id}`}
-          className="text-blue-500  active:text-white active:bg-[linear-gradient(345deg,cyan,blue)] transition bg-zinc-100 py-3 px-6 rounded-full w-1/3 flex justify-center"
-        >
-          <MessageCircle fill={"white"} className="w-5 h-5" strokeWidth={2.4} />
-        </Link>
+  {/* Comment Button */}
+  <Link href={`/postid/${id}`} aria-label="Comment">
+    <MessageCircle
+      fill="none"
+      className="w-5 h-5 hover:text-blue-500 transition-colors"
+      strokeWidth={2.4}
+    />
+  </Link>
 
-        <button
-          onClick={() => share(id)}
-          type="button"
-          aria-label="Share"
-          className="text-purple-500  active:text-white active:bg-[linear-gradient(345deg,violet,purple)]  transition bg-zinc-100 py-3 px-6 rounded-full w-1/3 flex justify-center"
-        >
-          <Share2 className="w-5 h-5" strokeWidth={2.4} />
-        </button>
-      </div>
+  {/* Share Button */}
+  <button
+    onClick={() => share(id)}
+    type="button"
+    aria-label="Share"
+    className="hover:text-green-500 transition-colors"
+  >
+    <Share2 className="w-5 h-5" strokeWidth={2.4} />
+  </button>
+</div>
+
     </div>
   );
 }

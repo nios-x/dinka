@@ -130,7 +130,8 @@
 
 .logo {
   font-family: logo;
-  background: linear-gradient(270deg, rgb(150, 0, 192), rgb(0, 170, 204));
+  /* background: linear-gradient(270deg, rgb(150, 0, 192), rgb(0, 170, 204)); */
+  background-color: currentColor;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;

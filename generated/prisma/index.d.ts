@@ -58,7 +58,16 @@ export type Chats = $Result.DefaultSelection<Prisma.$ChatsPayload>
  * Enums
  */
 export namespace $Enums {
-  export const Viewers: {
+  export const ChatType: {
+  Message: 'Message',
+  Call: 'Call',
+  VideoCall: 'VideoCall'
+};
+
+export type ChatType = (typeof ChatType)[keyof typeof ChatType]
+
+
+export const Viewers: {
   Public: 'Public',
   Followers: 'Followers'
 };
@@ -81,16 +90,11 @@ export const Provider: {
 
 export type Provider = (typeof Provider)[keyof typeof Provider]
 
-
-export const ChatType: {
-  Message: 'Message',
-  Call: 'Call',
-  VideoCall: 'VideoCall'
-};
-
-export type ChatType = (typeof ChatType)[keyof typeof ChatType]
-
 }
+
+export type ChatType = $Enums.ChatType
+
+export const ChatType: typeof $Enums.ChatType
 
 export type Viewers = $Enums.Viewers
 
@@ -103,10 +107,6 @@ export const Relationship: typeof $Enums.Relationship
 export type Provider = $Enums.Provider
 
 export const Provider: typeof $Enums.Provider
-
-export type ChatType = $Enums.ChatType
-
-export const ChatType: typeof $Enums.ChatType
 
 /**
  * ##  Prisma Client ʲˢ

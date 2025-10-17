@@ -1,40 +1,10 @@
 // next.config.js or next.config.ts (if using TypeScript)
 
+import { hostname } from "os";
+
 const nextConfig = {
   images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "res.cloudinary.com",
-        pathname: "/**",
-      },
-      {
-        protocol: "http",
-        hostname: "res.cloudinary.com",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
-        hostname: "imgs.search.brave.com",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
-        hostname: "lh3.googleusercontent.com",
-        pathname: "/**",
-      },
-      
-      {
-        protocol: "https",
-        hostname: "ui-avatars.com",
-        pathname: "/**",
-      },
-        {
-        protocol: "https",
-        hostname: "api.dicebear.com",
-        pathname: "/**",
-      },
-    ],
+    unoptimized: true, // disables Next.js image optimization for all external URLs
   },
 };
 

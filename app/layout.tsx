@@ -41,7 +41,7 @@ export default function RootLayout({
           content="ca-pub-6922023305389397"
         />
       </head>
-      <body className="bg-zinc-50 dark:bg-zinc-900 antialiased min-h-screen">
+      <body className="bg-zinc-50 dark:[#121212] antialiased min-h-screen">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -51,7 +51,7 @@ export default function RootLayout({
           <SessionProvider>
             <div className="w-screen min-h-screen relative">
               <NavBar />
-              <div className="py-16" />
+              <div className="py-9" />
               <PostProvider>
                 <SocketProvider>{children}</SocketProvider>
               </PostProvider>

@@ -5,10 +5,10 @@ import Posts from "@/components/Posts";
 import { usePostContext } from "./Providers/PostsProvider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { 
-  MessageCircleIcon, 
-  HeartIcon, 
-  ShareIcon, 
+import {
+  MessageCircleIcon,
+  HeartIcon,
+  ShareIcon,
   UsersIcon,
   SparklesIcon,
   TrendingUpIcon
@@ -23,6 +23,22 @@ export default function Page() {
   if (status === "authenticated" && session) {
     return (
       <div className="min-h-[89vh] flex flex-col justify-between">
+        <div className="flex w-full gap-2 overflow-y-scroll p-2 m-2">
+          {["You", "Ranveer", "Ramen", "Goose", "Zoro"].map((name, i) => (
+            <div key={i} className="flex flex-col items-center">
+              <div className="h-20 w-20 bg-gradient-to-b from-violet-800 to-red-600 rounded-full flex justify-center items-center rotate-[-235deg] " style={{scrollbarWidth:"none"}}>
+                <div className="w-[93%] h-[93%] p-[1px] bg-white rounded-full overflow-hidden">
+                  <img
+                    src="https://images.pexels.com/photos/35537/child-children-girl-happy.jpg?auto=compress&cs=tinysrgb&w=260&h=250&dpr=2"
+                    className="w-full h-full object-cover rotate-[235deg] rounded-full"
+                    alt={name}
+                  />
+                </div>
+              </div>
+              <div className="pt-1 text-xs font-bold text-center">{name}</div>
+            </div>
+          ))}
+        </div>
         {postContext.isLoading ? (
           <div className="flex items-center justify-center flex-grow">
             <div className="flex items-center space-x-4">
@@ -69,10 +85,10 @@ export default function Page() {
               Connect. Share. Discover.
             </h1>
             <p className="text-xl md:text-2xl text-zinc-600 dark:text-zinc-300 mb-8 max-w-3xl mx-auto">
-              Dinka is a modern social media platform where you can share posts, 
+              Dinka is a modern social media platform where you can share posts,
               interact through likes and comments, and connect with others in real time.
             </p>
-            
+
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
               <Link href="/signup">
                 <Button size="lg" className="text-lg cursor-pointer px-8 py-6 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
@@ -185,5 +201,5 @@ export default function Page() {
         </div>
       </div>
     </div>
-  );  
+  );
 }
