@@ -1,60 +1,35 @@
-name: CI
-on: [push,pull_request]
+name: Deploy to GCP
+
+on:
+  push:
+    branches:
+      - main
+
 jobs:
-  CI_HEALTH_CHECK: 
+  deploy:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:15
-        ports:
-          - 5432:5432
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: dinka
-        options: >-
-          --health-cmd="pg_isready -U postgres"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
-    env:
-      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/dinka"
-      NEXTAUTH_SECRET: dummy
-      NEXTAUTH_URL: "http://localhost:3000"
-      
-      # Cloudinary (for image uploads)
-      CLOUDINARY_CLOUD_NAME: dummy
-      CLOUDINARY_API_KEY: dummy
-      CLOUDINARY_API_SECRET: dummy
-      
-      # Email (for OTP verification)
-      EMAIL_HOST: "smtp.gmail.com"
-      EMAIL_PORT: 587
-      EMAIL_USER: dummy
-      EMAIL_PASS: dummy
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          path: .
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'npm' 
-      - name: Install Dependencies
-        run: npm install
-      - name: Database migrations
-        run: |
-          # Generate Prisma client
-          npx prisma generate
-          
-          # Run database migrations
-          npx prisma migrate deploy
-          
-          # (Optional) View your data
-          # npx prisma studio
-      - name: Build
-        run: npm run build
-          
-        
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'
+
+    - name: Copy SSH key
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.GCP_SSH_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+
+    - name: Deploy to GCP VM
+      run: |
+        ssh -o StrictHostKeyChecking=no soumyajaiswal7708@34.42.67.161 << 'EOF'
+          cd /home/soumyajaiswal7708/dinka
+          git pull origin main
+          npm install
+          npm run build
+          pm2 restart dinka || pm2 start npm --name "dinka" -- run start
+        EOF
