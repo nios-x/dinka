@@ -24,7 +24,7 @@ jobs:
         echo "${{ secrets.GCP_SSH_KEY }}" > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
 
-    - name: Deploy to GCP VM
+    - name: Deploy to GCP VM (EC2)
       run: |
         ssh -o StrictHostKeyChecking=no soumyajaiswal7708@34.42.67.161 << 'EOF'
           cd /home/soumyajaiswal7708/dinka
