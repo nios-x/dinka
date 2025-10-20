@@ -18,7 +18,7 @@ jobs:
       - name: Deploy to VM
         run: |
           ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
-            cd /home/${USER}/app || git clone https://github.com/${{ github.repository }} app && cd app
+            cd /home/soumyajaiswal7708/app || git clone https://github.com/${{ github.repository }} app && cd app
             git pull origin main
             npm install --legacy-peer-deps
             npm run build
