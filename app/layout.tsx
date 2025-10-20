@@ -51,7 +51,7 @@ export default function RootLayout({
           <SessionProvider>
             <div className="w-screen min-h-screen relative">
               <NavBar />
-              <div className="py-9" />
+              <div className="py-9 dark:bg-[#121212]" />
               <PostProvider>
                 <SocketProvider>{children}</SocketProvider>
               </PostProvider>

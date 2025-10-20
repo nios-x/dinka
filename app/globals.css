@@ -154,3 +154,25 @@
     transform: rotate(360deg);
   }
 }
+.media-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100vw; /* Default square — full screen width */
+  max-height: 800px; /* Limit for very tall images */
+  min-height: 400px; /* Prevent very small heights */
+}
+
+.media-image {
+  object-fit: cover;
+}
+
+/* If the image is ultra-tall (ratio < 4:5), show full image instead */
+@media (max-aspect-ratio: 4/5) {
+  .media-wrapper {
+    height: auto;
+    max-height: 90vh;
+  }
+  .media-image {
+    object-fit: contain;
+  }
+}

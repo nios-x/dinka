@@ -1,20 +1,22 @@
 "use client";
 
-import { DialogDemo } from "./Options";
 import React from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { formatDistanceToNow } from "date-fns";
 import {
   Heart,
   MessageCircle,
   Share2,
   Globe,
   Users,
+  Calendar,
+  EllipsisVertical,
 } from "lucide-react";
-
+import { DialogDemo } from "./Options";
 import share from "@/components/Posts/sharecall";
-import Link from "next/link";
-import Image from "next/image";
-import { formatDistanceToNow } from "date-fns";
 import { Toaster } from "../ui/sonner";
+
 type PostProps = {
   id: number;
   likes: number;
@@ -26,11 +28,11 @@ type PostProps = {
   author: {
     name: string;
     image?: string;
-    pic?:string
+    pic?: string;
   };
   createdAt: string;
   falserounded?: boolean;
-  handleDelete?: (postid:number)=>void;
+  handleDelete?: (postId: number) => void;
 };
 
 export default function Post({
@@ -47,118 +49,148 @@ export default function Post({
   isLiked,
   redir,
   authorId,
-  hidedel=true,
-  falserounded,
-}: PostProps & {hidedel?:boolean, handleLike: any; redir?: boolean;authorId:string }) {
-  const visibilityIcon = {
-    Public: <Globe className="w-4 h-4 text-blue-500" />,
-    Followers: <Users className="w-4 h-4 text-green-500" />,
-  }[visibility];
-  console.log(author)
+  hidedel = true,
+}: PostProps & {
+  hidedel?: boolean;
+  handleLike: (id: number, like: boolean) => void;
+  redir?: boolean;
+  authorId: string;
+}) {
+  const visibilityIcon =
+    visibility === "Public" ? (
+      <Globe className="w-4 h-4 text-blue-500" />
+    ) : (
+      <Users className="w-4 h-4 text-green-500" />
+    );
+
+  const profileImg =
+    author.image ||
+    author.pic ||
+    "https://imgs.search.brave.com/iiL6FIsWn1W2fHExlUdzmEXVolOVkj4jfy06SrdfTf8/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9jZG4x/LnZlY3RvcnN0b2Nr/LmNvbS9pL3RodW1i/LWxhcmdlLzk3Lzcw/L3B1cnBsZS11c2Vy/LWljb24taW4tdGhl/LWNpcmNsZS1hLXNv/bGlkLWdyYWRpZW50/LXZlY3Rvci0yMzUx/OTc3MC5qcGc";
+
   return (
-    <div className=" mb-5   p-4 w-full max-w-xl mx-auto x transition-all duration-300 bg-[#ffffff]">
+    <div className="mb-6 w-full max-w-xl mx-auto p-4 bg-white dark:bg-black rounded-lg border border-zinc-100 dark:border-zinc-800 transition-all duration-300">
+      {/* Header */}
       <div className="flex items-start justify-between">
-          <Link href={`/profile?id=${authorId}`}>
-        <div className="w-max flex items-center">
-          <div className="relative w-12 h-12 rounded-full overflow-hidden shrink-0">
-            <Toaster />
-            <Image
-              alt="author"
-              src={
-                author.image ||author.pic||
-                "https://imgs.search.brave.com/iiL6FIsWn1W2fHExlUdzmEXVolOVkj4jfy06SrdfTf8/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9jZG4x/LnZlY3RvcnN0b2Nr/LmNvbS9pL3RodW1i/LWxhcmdlLzk3Lzcw/L3B1cnBsZS11c2Vy/LWljb24taW4tdGhl/LWNpcmNsZS1hLXNv/bGlkLWdyYWRpZW50/LXZlY3Rvci0yMzUx/OTc3MC5qcGc"
-              }
-              fill
-              style={{ objectFit: "cover",  }}
-              />
+        {/* Author Info */}
+        <Link href={`/profile?id=${authorId}`} className="flex items-center">
+          <div className="bg-gradient-to-tr from-rose-500 via-purple-500 to-cyan-500 p-[1.8px] rounded-full">
+            <div className="p-[2px] bg-white dark:bg-black rounded-full">
+              <div className="relative w-9 h-9 rounded-full overflow-hidden">
+                <Toaster />
+                <Image
+                  src={profileImg}
+                  alt={author.name}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+            </div>
           </div>
-          <div className="flex-1 flex flex-col px-2 pb-2">
-            <div className="font-semibold text-lg text-zinc-700 dark:text-zinc-200">
+
+          <div className="flex flex-col px-3">
+            <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
               {author.name}
-            </div>
-            <div className="text-xs text-zinc-500">
-              {formatDistanceToNow(new Date(createdAt), {
-                addSuffix: true,
-              })}
-            </div>
-          </div>
-        </div>
-              </Link>
-
-        <div className="flex items-center space-x-1 text-xs text-zinc-500 px-5 py-3">
-          {visibilityIcon}
-          <span>{visibility}</span>
-          {hidedel && <DialogDemo btnClick={()=>{ handleDelete && handleDelete(id)}} />}
-        </div>
-      </div>
-
-      {redir ? (
-        <Link href={`/postid/${id}`}>
-          <div className="text-[14.6px] px-2 text-zinc-800 whitespace-pre-wrap">
-            {title}
+            </p>
+            <p className="text-xs flex items-center gap-1 text-zinc-500">
+              <Calendar size={10} />{" "}
+              {formatDistanceToNow(new Date(createdAt), { addSuffix: true })}
+            </p>
           </div>
         </Link>
-      ) : (
-        <div className="text-[14.6px] px-2 text-zinc-800 whitespace-pre-wrap">
-          {title}
+
+        {/* Post Options */}
+        <div className="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-800 text-xs rounded-full px-4 py-2 text-zinc-600 dark:text-zinc-300">
+          {visibilityIcon}
+          <span>{visibility}</span>
+          {hidedel && (
+            <DialogDemo btnClick={() => handleDelete?.(id)} />
+          )}
+          <EllipsisVertical className="w-4 h-4 opacity-70" />
         </div>
-      )}
+      </div>
 
       {/* Media */}
       {isMedia && mediaUrl && (
         <Link href={mediaUrl}>
-          <div className="w-full h-[400px] relative mt-5 overflow-hidden">
-            <Image
-              src={mediaUrl}
-              alt="post media"
-              fill
-              quality={30}
-              priority={false}
-              className="object-contain w-full h-full rounded-md overflow-hidden"
-            />
+          <div className="relative w-screen left-1/2 right-1/2 -mx-[50vw] mt-4 bg-black overflow-hidden">
+            <div className="relative w-full" style={{ aspectRatio: "1 / 1" }}>
+              <Image
+                src={mediaUrl}
+                alt="Post media"
+                fill
+                quality={80}
+                priority={false}
+                className="object-cover sm:object-contain"
+                sizes="100vw"
+              />
+            </div>
           </div>
         </Link>
       )}
 
-      {/* Buttons */}
-<div className="flex items-center justify-evenly w-1/2 gap-2 pt-3 px-1.5 text-zinc-600">
-  {/* Like Button */}
-  <button
-    onClick={() => handleLike(id, !isLiked)}
-    type="button"
-    aria-label="Love"
-    className={`flex items-center gap-1 transition-all duration-150 rounded-md px-3 py-2 ${
-      isLiked ? "text-rose-500 bg-rose-100" : "text-zinc-600 hover:text-rose-400 hover:bg-zinc-100"
-    }`}
-  >
-    <Heart
-      fill={isLiked ? "currentColor" : "none"}
-      className="w-5 h-5"
-      strokeWidth={2.4}
-    />
-    <span className="text-sm">{likes ? likes : ""}</span>
-  </button>
+     {/* Action Buttons */}
+<div className="flex items-center justify-between pt-4 px-2 text-zinc-600 dark:text-zinc-300">
+  <div className="flex items-center gap-6">
+    {/* ❤️ Like */}
+    <button
+      onClick={() => handleLike(id, !isLiked)}
+      aria-label="Like"
+      className="flex items-center gap-2 transition-all group"
+    >
+      <Heart
+        fill={isLiked ? "currentColor" : "none"}
+        strokeWidth={2.4}
+        className={`w-6 h-6 transition-all ${
+          isLiked
+            ? "text-rose-500 scale-110"
+            : "group-hover:text-rose-500 group-hover:scale-105"
+        }`}
+      />
+      <span className="text-sm font-medium select-none">
+        {likes > 0 ? likes : ""}
+      </span>
+    </button>
 
-  {/* Comment Button */}
-  <Link href={`/postid/${id}`} aria-label="Comment">
-    <MessageCircle
-      fill="none"
-      className="w-5 h-5 hover:text-blue-500 transition-colors"
-      strokeWidth={2.4}
-    />
-  </Link>
+    {/* 💬 Comment */}
+    <Link
+      href={`/postid/${id}`}
+      aria-label="Comment"
+      className="flex items-center gap-2 transition-all group"
+    >
+      <MessageCircle
+        strokeWidth={2.4}
+        className="w-6 h-6 group-hover:text-blue-500 group-hover:scale-105 transition-all"
+      />
+    </Link>
 
-  {/* Share Button */}
-  <button
-    onClick={() => share(id)}
-    type="button"
-    aria-label="Share"
-    className="hover:text-green-500 transition-colors"
-  >
-    <Share2 className="w-5 h-5" strokeWidth={2.4} />
-  </button>
+    {/* 🔗 Share */}
+    <button
+      onClick={() => share(id)}
+      aria-label="Share"
+      className="flex items-center gap-2 transition-all group"
+    >
+      <Share2
+        strokeWidth={2.4}
+        className="w-6 h-6 group-hover:text-green-500 group-hover:scale-105 transition-all"
+      />
+    </button>
+  </div>
 </div>
 
+
+      {/* Caption */}
+      {redir ? (
+        <Link href={`/postid/${id}`}>
+          <p className="mt-2 text-[14.6px] px-2 text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap">
+            {title}
+          </p>
+        </Link>
+      ) : (
+        <p className="mt-2 text-[14.6px] px-2 text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap">
+          {title}
+        </p>
+      )}
     </div>
   );
 }

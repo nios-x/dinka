@@ -22,12 +22,12 @@ export default function Page() {
   // If authenticated, show the main feed
   if (status === "authenticated" && session) {
     return (
-      <div className="min-h-[89vh] flex flex-col justify-between">
-        <div className="flex w-full gap-2 overflow-y-scroll p-2 m-2">
-          {["You", "Ranveer", "Ramen", "Goose", "Zoro"].map((name, i) => (
+      <div className="min-h-[89vh] flex flex-col justify-between dark:bg-[#121212]">
+        <div className="flex w-full gap-2 overflow-y-scroll px-2 m-2 " style={{scrollbarWidth:"none"}}>
+          {["Your story", "Ranveer", "Ramen", "Goose", "Zoro"].map((name, i) => (
             <div key={i} className="flex flex-col items-center">
-              <div className="h-20 w-20 bg-gradient-to-b from-violet-800 to-red-600 rounded-full flex justify-center items-center rotate-[-235deg] " style={{scrollbarWidth:"none"}}>
-                <div className="w-[93%] h-[93%] p-[1px] bg-white rounded-full overflow-hidden">
+              <div className="h-25 w-25 bg-[linear-gradient(80deg,red,purple,cyan)] rounded-full flex justify-center items-center rotate-[-235deg] " >
+                <div className="w-[93%] h-[93%] p-[3px] bg-white dark:bg-[#121212] rounded-full overflow-hidden">
                   <img
                     src="https://images.pexels.com/photos/35537/child-children-girl-happy.jpg?auto=compress&cs=tinysrgb&w=260&h=250&dpr=2"
                     className="w-full h-full object-cover rotate-[235deg] rounded-full"
@@ -35,7 +35,7 @@ export default function Page() {
                   />
                 </div>
               </div>
-              <div className="pt-1 text-xs font-bold text-center">{name}</div>
+              <div className="pt-1 text-xs dark:text-zinc-100 text-zinc-900 font-bold text-center">{name}</div>
             </div>
           ))}
         </div>
