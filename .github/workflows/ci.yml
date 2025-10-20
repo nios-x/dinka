@@ -1,4 +1,4 @@
-name: Deploy to GCP VM(E2)
+name: Deploy to GCP VM
 on:
   push:
     branches:
