@@ -27,25 +27,26 @@ export default function PersonCard({
   
 }: Props) {
   return (
-    <div className="border rounded-2xl p-4 max-w-xl mx-3 py-1">
-      <div className="flex gap-3 items-center ">
+    <div className="flex justify-between rounded-2xl  max-w-xl mx-3 py-1 ">
+      <div className="flex gap-3 items-center w-max ">
         <Link href={`/profile?id=${person.id}`}>
-        <div className="w-10 h-10 rounded-full relative overflow-hidden">
+        <div className="w-15 h-15 rounded-full relative overflow-hidden">
           <Image src={person.pic} alt="" fill className="object-cover" />
         </div>
         </Link>
-        <Link href={`/profile?id=${person.id}`}>
-        <div className="font-medium">{person.name}</div>
+        <Link href={`/profile?id=${person.id}`}>        
+        <div className="font-bold text-[11px]">{person.name}</div>
+        <div className="font-medium text-[14px]">{person.name}</div>
         </Link>
       </div>
-      <div className="flex justify-end gap-2 mt-3 ">
+      <div className="flex justify-end h-max gap-2 mt-3 ">
         {primaryActionLabel && (
-          <Badge className="cursor-pointer text-md" onClick={onPrimaryClick}>
+          <Badge className="cursor-pointer text-sm" onClick={onPrimaryClick}>
             {primaryActionLabel}
           </Badge>
         )}
         {secondaryActionLabel && (
-          <Badge asChild variant="outline">
+          <Badge asChild variant="outline" className="mr-2">
             <button onClick={onSecondaryClick}>
               {secondaryActionLabel}
             </button>

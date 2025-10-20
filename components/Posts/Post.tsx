@@ -130,8 +130,8 @@ export default function Post({
       )}
 
      {/* Action Buttons */}
-<div className="flex items-center justify-between pt-4 px-2 text-zinc-600 dark:text-zinc-300">
-  <div className="flex items-center gap-6">
+<div className="flex items-center justify-between pt-4 px-1 text-zinc-600 dark:text-zinc-300">
+  <div className="flex items-center gap-4">
     {/* ❤️ Like */}
     <button
       onClick={() => handleLike(id, !isLiked)}
@@ -140,11 +140,11 @@ export default function Post({
     >
       <Heart
         fill={isLiked ? "currentColor" : "none"}
-        strokeWidth={2.4}
+        strokeWidth={2.2}
         className={`w-6 h-6 transition-all ${
           isLiked
             ? "text-rose-500 scale-110"
-            : "group-hover:text-rose-500 group-hover:scale-105"
+            : "group-hover:text-rose-500 text-zinc-800 group-hover:scale-105"
         }`}
       />
       <span className="text-sm font-medium select-none">
@@ -159,8 +159,8 @@ export default function Post({
       className="flex items-center gap-2 transition-all group"
     >
       <MessageCircle
-        strokeWidth={2.4}
-        className="w-6 h-6 group-hover:text-blue-500 group-hover:scale-105 transition-all"
+        strokeWidth={2.2}
+        className="w-6 h-6 group-hover:text-blue-500 group-hover:scale-105 text-zinc-800 transition-all"
       />
     </Link>
 
@@ -171,8 +171,8 @@ export default function Post({
       className="flex items-center gap-2 transition-all group"
     >
       <Share2
-        strokeWidth={2.4}
-        className="w-6 h-6 group-hover:text-green-500 group-hover:scale-105 transition-all"
+        strokeWidth={2.2}
+        className="w-6 h-6 group-hover:text-green-500 group-hover:scale-105 text-zinc-800 transition-all"
       />
     </button>
   </div>
@@ -182,8 +182,10 @@ export default function Post({
       {/* Caption */}
       {redir ? (
         <Link href={`/postid/${id}`}>
-          <p className="mt-2 text-[14.6px] px-2 text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap">
-            {title}
+          <p className="mt-2 text-[13px] font-medium px-1 text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap">
+           <span className="text-sm font-extrabold">
+              {title.length ?author.name:""}
+            </span> {title}
           </p>
         </Link>
       ) : (
