@@ -1,35 +1,26 @@
-name: Deploy to GCP
-
+name: Deploy to GCP VM
 on:
   push:
     branches:
-      - main
-
+      - main  
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '20'
-
-    - name: Copy SSH key 1
-      run: |
-        mkdir -p ~/.ssh
-        echo "${{ secrets.GCP_SSH_KEY }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-
-    - name: Deploy to GCP VM 
-      run: |
-        ssh -o StrictHostKeyChecking=no soumyajaiswal7708@34.42.67.161 << 'EOF'
-          cd /home/soumyajaiswal7708/dinka
-          git pull origin main
-          npm install
-          npm run build
-          pm2 restart dinka || pm2 start npm --name "dinka" -- run start
-        EOF
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+      - name: Deploy to VM
+        run: |
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
+            cd /home/${USER}/app || git clone https://github.com/${{ github.repository }} app && cd app
+            git pull origin main
+            npm install --legacy-peer-deps
+            npm run build
+            pm2 restart nextapp || pm2 start npm --name "nextapp" -- start
+          EOF
