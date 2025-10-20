@@ -22,6 +22,6 @@ jobs:
             git pull origin main
             npm install --legacy-peer-deps
             npm run build
-            pm2 restart nextapp || pm2 start npm --name "nextapp" -- start
+            pm2 restart nextapp || pm2 start npm --name "nextapp" -- run start
           EOF
 
