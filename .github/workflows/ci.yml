@@ -56,10 +56,12 @@ jobs:
           npm prune --production  # remove dev deps to reduce upload size
 
       # 4. Prepare build artifact (only send necessary files)
+      # 4. Prepare build artifact (only send necessary files)
       - name: Prepare deployment bundle
         run: |
           mkdir deploy
-          cp -r .next package.json next.config.js public deploy/
+          cp -r .next package.json public deploy/
+          if [ -f next.config.js ]; then cp next.config.js deploy/; fi
           if [ -f ecosystem.config.js ]; then cp ecosystem.config.js deploy/; fi
 
       # 5. Setup SSH
