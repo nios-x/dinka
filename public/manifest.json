@@ -1,0 +1,16 @@
+{
+  "name": "Dinka",
+  "short_name": "Dinka",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "black",
+  "background_color": "black",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon-32x32",
+      "sizes": "32x32",
+      "type": "image/png"
+    }
+  ]
+}

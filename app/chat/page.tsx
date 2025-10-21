@@ -91,7 +91,7 @@ export default function StickyInput() {
                 }`}
               >
                 <div
-                  className={`relative break-words px-4 py-2 rounded-2xl text-sm sm:text-base max-w-[75%] shadow-md animate-fadeIn
+                  className={`relative break-words  px-4 py-2 rounded-2xl text-sm sm:text-base max-w-[75%] shadow-md animate-fadeIn
                     ${
                       isMe
                         ? "bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500 text-white rounded-tr-none"

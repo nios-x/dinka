@@ -1,11 +1,22 @@
-// next.config.js or next.config.ts (if using TypeScript)
+// next.config.ts
+import type { NextConfig } from "next";
+import withPWAInit from "next-pwa";
 
-import { hostname } from "os";
+const withPWA = withPWAInit({
+  dest: "public",
+  register: true,
+  skipWaiting: true,
+  disable: process.env.NODE_ENV === "development",
+});
 
-const nextConfig = {
+const nextConfig: NextConfig = withPWA({
+  reactStrictMode: true,
   images: {
-    unoptimized: true, // disables Next.js image optimization for all external URLs
+    unoptimized: true, // disables Next.js image optimization
   },
-};
+  compiler: {
+    removeConsole: process.env.NODE_ENV === "production",
+  },
+});
 
-module.exports = nextConfig;
+export default nextConfig;

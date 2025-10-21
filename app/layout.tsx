@@ -11,6 +11,8 @@ import Script from "next/script";
 export const metadata: Metadata = {
   title: "Dinka - To Be Social",
   description: "Dinka is a social media app",
+  manifest: "/manifest.json",
+  themeColor: "#2563eb",
   icons: {
     icon: [
       { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
