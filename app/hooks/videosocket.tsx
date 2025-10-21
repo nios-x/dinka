@@ -1,6 +1,7 @@
 "use client"
 import React, { useState, useEffect, useRef, useContext, createContext } from "react";
 import { useSession } from "next-auth/react";
+import { json } from "zod";
 
 const SocketContext = createContext<any>(null)
 
@@ -12,10 +13,19 @@ export function SocketProvider({ children }: any) {
   const { data: session }: any = useSession();
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const [peerConnection, setPeerConection] = useState<RTCPeerConnection | null>(null);
-
+  const [socketMessages, setSocketMessages] = useState<any>([]);
   // State to queue ICE candidates before remote description is set
   const [iceCandidatesQueue, setIceCandidatesQueue] = useState<RTCIceCandidate[]>([]);
 
+
+  const send_message = (targetUserID:string, content:string, fromUserID:string) =>{
+    socket?.send(JSON.stringify({
+      targetUserID:targetUserID,
+      fromUserID,
+      content,
+      type:"foreward_message"
+    }))
+  }
   useEffect(() => {
     console.log("remote user changed to: ", remoteUser);
   }, [remoteUser]);
@@ -94,8 +104,10 @@ export function SocketProvider({ children }: any) {
 
       ws.onmessage = async (event) => {
         const message = JSON.parse(event.data);
-
-        if (message.type === "incoming_call") {
+        if(message.type === "forewarded_message"){
+          setSocketMessages((e:any) => ([...e, message]));
+        }
+        else if (message.type === "incoming_call") {
           setRemoteUser(message.fromUserID);
           console.log("Incoming call from:", message.fromUserID);
           const askuser = confirm(`Incoming call from ${message.fromUserID}. Accept?`);
@@ -210,7 +222,16 @@ export function SocketProvider({ children }: any) {
   }
 
   return (
-    <SocketContext.Provider value={{ createCall }}>{children}</SocketContext.Provider>
+  <SocketContext.Provider
+  value={{
+    createCall,
+    socketMessages,
+    setSocketMessages, // 🧩 added
+    send_message,
+  }}
+>
+  {children}
+</SocketContext.Provider>
   );
 }
 
