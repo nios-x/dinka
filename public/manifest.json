@@ -1,16 +1,23 @@
 {
   "name": "Dinka",
   "short_name": "Dinka",
-  "start_url": "/",
+  "start_url": "https://dinka.vercel.app/",
+  "scope": "https://dinka.vercel.app/",
   "display": "standalone",
-  "theme_color": "black",
-  "background_color": "black",
+  "theme_color": "#000000",
+  "background_color": "#000000",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/favicon-32x32",
+      "src": "https://dinka.vercel.app/favicon-192x192.png",
       "sizes": "192x192",
       "type": "image/png"
+    },
+    {
+      "src": "https://dinka.vercel.app/favicon-192x192.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
