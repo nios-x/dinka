@@ -9,10 +9,7 @@ export default function StickyInput() {
   const [message, setMessage] = useState("");
   const [chats, setChats] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
   const chatContainerRef = useRef<HTMLDivElement>(null);
-
-  // Fetch all chats
   useEffect(() => {
     if (!toId) return;
 
@@ -20,7 +17,7 @@ export default function StickyInput() {
       try {
         const res = await fetch(`/api/v1/chats/getall?id=${toId}`);
         const body = await res.json();
-        setChats(body);
+        setChats(body.reverse());
       } catch (err) {
         console.error("Failed to fetch chats:", err);
       } finally {
@@ -29,14 +26,12 @@ export default function StickyInput() {
     })();
   }, [toId]);
 
-  // Scroll to bottom whenever chats update
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   }, [chats]);
 
-  // Handle message sending
   const handleSend = async () => {
     if (!message.trim()) return;
 

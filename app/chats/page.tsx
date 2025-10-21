@@ -42,7 +42,7 @@ export default function Page() {
 
   return (
     <div className="max-w-2xl mx-auto py-6 px-4">
-      <h1 className="text-3xl font-bold text-zinc-700 mb-6">Chats</h1>
+      <h1 className="text-3xl font-bold text-zinc-700 dark:text-zinc-100 mb-4">Chats</h1>
 
       <div className="space-y-3">
         {peoples.map((chat: any) => {
@@ -56,16 +56,16 @@ export default function Page() {
           
             <div
               key={chat.id}
-              className="flex items-center gap-4 p-3 mb-3 rounded-2xl hover:bg-zinc-100 transition-all cursor-pointer border border-zinc-200"
+              className="flex items-center gap-4 p-3 mb-3 rounded-2xl   hover:bg-zinc-100 transition-all cursor-pointer  "
               >
               <img
-                src={contact?.pic || "/default-avatar.png"}
+                src={contact?.pic ||"https://imgs.search.brave.com/q-QoMPyZHgH3putURkfCdIQMa5Bg8luup8qs3GjbpQs/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWcu/ZnJlZXBpay5jb20v/cHJlbWl1bS12ZWN0/b3IvdXNlci1wcm9m/aWxlLWljb24tY2ly/Y2xlXzEyNTYwNDgt/MTI0OTkuanBnP3Nl/bXQ9YWlzX2h5YnJp/ZCZ3PTc0MCZxPTgw"}
                 alt={contact?.name || "User"}
-                className="w-12 h-12 rounded-full object-cover border border-zinc-300"
+                className="w-12 h-12  rounded-full object-cover border border-zinc-300"
                 />
               <div className="flex-1">
                 <div className="flex justify-between items-center">
-                  <h2 className="text-lg font-semibold text-zinc-800">
+                  <h2 className="text-lg font-semibold text-zinc-800 dark:text-white">
                     {contact?.name || contact?.username || "Unknown"}
                   </h2>
                   <p className="text-xs text-zinc-400">
@@ -75,7 +75,7 @@ export default function Page() {
                     })}
                   </p>
                 </div>
-                <p className="text-sm text-zinc-500 truncate max-w-xs">
+                <p className="text-sm text-zinc-500 truncate max-w-xs dark:text-zinc-300">
                   {chat.message || (chat.mediaUrl ? "📎 Media" : "No message")}
                 </p>
               </div>

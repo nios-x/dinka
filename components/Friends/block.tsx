@@ -31,12 +31,12 @@ export default function PersonCard({
       <div className="flex gap-3 items-center w-max ">
         <Link href={`/profile?id=${person.id}`}>
         <div className="w-15 h-15 rounded-full relative overflow-hidden">
-          <Image src={person.pic} alt="" fill className="object-cover" />
+          <Image src={person.pic||"https://imgs.search.brave.com/q-QoMPyZHgH3putURkfCdIQMa5Bg8luup8qs3GjbpQs/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWcu/ZnJlZXBpay5jb20v/cHJlbWl1bS12ZWN0/b3IvdXNlci1wcm9m/aWxlLWljb24tY2ly/Y2xlXzEyNTYwNDgt/MTI0OTkuanBnP3Nl/bXQ9YWlzX2h5YnJp/ZCZ3PTc0MCZxPTgw"}  alt="" fill className="object-cover scale-[1.02]" />
         </div>
         </Link>
         <Link href={`/profile?id=${person.id}`}>        
-        <div className="font-bold text-[11px]">{person.name}</div>
-        <div className="font-medium text-[14px]">{person.name}</div>
+        <div className="font-bold text-[11px]">{person.name || "Anonymous User"}</div>
+        <div className="font-medium text-[14px]">{person.name || "Anonymous User"}</div>
         </Link>
       </div>
       <div className="flex justify-end h-max gap-2 mt-3 ">

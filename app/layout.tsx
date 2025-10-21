@@ -22,7 +22,6 @@ export const metadata: Metadata = {
     "google-adsense-account": "ca-pub-6922023305389397",
   },
 };
-
 export default function RootLayout({
   children,
 }: {
@@ -31,7 +30,6 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Google Verification & AdSense Meta Tags */}
         <meta
           name="google-site-verification"
           content="W49636xYHCMc-ZbfBL18OBoCuP6j0kAKQ3VLFzd_E8A"
@@ -41,7 +39,7 @@ export default function RootLayout({
           content="ca-pub-6922023305389397"
         />
       </head>
-      <body className="bg-zinc-50 dark:[#121212] antialiased min-h-screen">
+      <body className="bg-zinc-50 dark:bg-[#121212] antialiased min-h-screen">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -49,17 +47,21 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <SessionProvider>
-            <div className="w-screen min-h-screen relative">
-              <NavBar />
-              <div className="py-9 dark:bg-[#121212]" />
-              <PostProvider>
-                <SocketProvider>{children}</SocketProvider>
-              </PostProvider>
-            </div>
+            <PostProvider>
+              <SocketProvider>
+                {/* ✅ Sticky Navbar Wrapper */}
+                <div className="sticky top-0 z-50 bg-zinc-50 dark:bg-[#121212] shadow-sm">
+                  <NavBar />
+                </div>
+
+                {/* ✅ Page Content */}
+                <main className="pt-16">
+                  {children}
+                </main>
+              </SocketProvider>
+            </PostProvider>
           </SessionProvider>
         </ThemeProvider>
-
-      
       </body>
     </html>
   );

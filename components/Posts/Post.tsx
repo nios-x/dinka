@@ -69,7 +69,7 @@ export default function Post({
     "https://imgs.search.brave.com/iiL6FIsWn1W2fHExlUdzmEXVolOVkj4jfy06SrdfTf8/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9jZG4x/LnZlY3RvcnN0b2Nr/LmNvbS9pL3RodW1i/LWxhcmdlLzk3Lzcw/L3B1cnBsZS11c2Vy/LWljb24taW4tdGhl/LWNpcmNsZS1hLXNv/bGlkLWdyYWRpZW50/LXZlY3Rvci0yMzUx/OTc3MC5qcGc";
 
   return (
-    <div className="mb-6 w-full max-w-xl mx-auto p-4 bg-white dark:bg-black rounded-lg border border-zinc-100 dark:border-zinc-800 transition-all duration-300">
+    <div className="mb-6  overflow-hidden w-full max-w-xl mx-auto p-4 bg-white dark:bg-black rounded-lg border border-zinc-100 dark:border-zinc-800 transition-all duration-300">
       {/* Header */}
       <div className="flex items-start justify-between">
         {/* Author Info */}
@@ -119,7 +119,7 @@ export default function Post({
                 src={mediaUrl}
                 alt="Post media"
                 fill
-                quality={80}
+                quality={100}
                 priority={false}
                 className="object-cover sm:object-contain"
                 sizes="100vw"
@@ -144,10 +144,10 @@ export default function Post({
         className={`w-6 h-6 transition-all ${
           isLiked
             ? "text-rose-500 scale-110"
-            : "group-hover:text-rose-500 text-zinc-800 group-hover:scale-105"
+            : "group-hover:text-rose-500 text-zinc-800 dark:text-zinc-200 group-hover:scale-105"
         }`}
       />
-      <span className="text-sm font-medium select-none">
+      <span className="text-md font-extrabold select-none">
         {likes > 0 ? likes : ""}
       </span>
     </button>
@@ -160,7 +160,7 @@ export default function Post({
     >
       <MessageCircle
         strokeWidth={2.2}
-        className="w-6 h-6 group-hover:text-blue-500 group-hover:scale-105 text-zinc-800 transition-all"
+        className="w-6 h-6 group-hover:text-blue-500 group-hover:scale-105 text-zinc-800 dark:text-zinc-200 transition-all"
       />
     </Link>
 
@@ -172,7 +172,7 @@ export default function Post({
     >
       <Share2
         strokeWidth={2.2}
-        className="w-6 h-6 group-hover:text-green-500 group-hover:scale-105 text-zinc-800 transition-all"
+        className="w-6 h-6 group-hover:text-green-500 group-hover:scale-105 text-zinc-800 dark:text-zinc-200 transition-all"
       />
     </button>
   </div>

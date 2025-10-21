@@ -46,7 +46,7 @@ export default function Page() {
     <div className="w-full space-y-4">
       <div className="flex justify-end pr-4 gap-x-2">
         
-      <Link className="text-right bg-zinc-800 text-white px-2 py-1 rounded-sm text-xs" href={"/people"}>Your Friends</Link>
+      <Link className="text-right bg-zinc-800 text-white px-3 py-2 rounded-full mt-5 active:bg-zinc-600/10 active:text-black text-xs font-bold" href={"/people"}>Your Friends</Link>
       </div>
       
       <Toaster />

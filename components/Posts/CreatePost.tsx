@@ -56,8 +56,8 @@ const handlePost = async () => {
       <DrawerContent className="h-screen">
         <div className="p-7 ">
           <DrawerTitle></DrawerTitle>
-          <div className="text-3xl font-bold text-zinc-700 mb-3">Create a Post</div>
-          <Textarea value={title} onChange={(e)=>setTitle(e.target.value)} placeholder="Write Somthing on your mind" className="h-50" />
+          <div className="text-3xl font-bold text-zinc-700 dark:text-zinc-100 mb-3">Create a Post</div>
+          <Textarea value={title} onChange={(e)=>setTitle(e.target.value)}  placeholder="Write Somthing on your mind" className="dark:text-zinc-100 h-50" />
           <div className="flex justify-between mt-5 items-center">
             <div className="w-max flex gap-2 items-center">
               {imagePreview && (
@@ -82,7 +82,7 @@ const handlePost = async () => {
                 <PlusIcon />
               </label>
             </div>
-            <DrawerClose onClick={handlePost}>Create</DrawerClose>
+            <DrawerClose className="-translate-2 text-right bg-zinc-800 text-white px-3 py-2 rounded-full mt-5 active:bg-zinc-600/10 active:text-black text-xs font-bold" onClick={handlePost}>Create</DrawerClose>
           </div>
         </div>
       </DrawerContent>

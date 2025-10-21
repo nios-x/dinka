@@ -24,12 +24,26 @@ export default function Page() {
     return (
       <div className="min-h-[89vh] flex flex-col justify-between dark:bg-[#121212]">
         <div className="flex w-full gap-2 overflow-y-scroll px-2 m-2 " style={{scrollbarWidth:"none"}}>
-          {["Your story", "Ranveer", "Ramen", "Goose", "Zoro"].map((name, i) => (
+                <div className="flex flex-col items-center relative">
+              <div className="h-25 w-25 bg-[linear-gradient(80deg,red,purple,cyan)] rounded-full flex justify-center items-center rotate-[-235deg] " >
+                <div className="w-[93%]  h-[93%] p-[3px] bg-white dark:bg-[#121212] rounded-full overflow-hidden">
+                  <img
+                    src="https://imgs.search.brave.com/Fk3Ch4f8hsuvYO9cNEZHJYZAmZT1JRsuFQb-Ub2nQfU/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/bW9ja29mdW4uY29t/L3dwLWNvbnRlbnQv/dXBsb2Fkcy8yMDI1/LzAyL2Rpc2NvcmQt/cGZwLTEzMjc2Mi5q/cGc"
+                    className="w-full h-full object-cover rotate-[235deg] rounded-full"
+                    alt={"Your story"}
+                  />
+                </div>
+              </div>
+                  
+              <div className="pt-1 text-xs dark:text-zinc-100 text-zinc-900 font-bold text-center">{"Your story"}</div>
+            </div>
+          
+          {[ "Ranveer", "Ramen", "Goose", "Zoro"].map((name, i) => (
             <div key={i} className="flex flex-col items-center">
               <div className="h-25 w-25 bg-[linear-gradient(80deg,red,purple,cyan)] rounded-full flex justify-center items-center rotate-[-235deg] " >
                 <div className="w-[93%] h-[93%] p-[3px] bg-white dark:bg-[#121212] rounded-full overflow-hidden">
                   <img
-                    src="https://images.pexels.com/photos/35537/child-children-girl-happy.jpg?auto=compress&cs=tinysrgb&w=260&h=250&dpr=2"
+                    src="https://imgs.search.brave.com/Fk3Ch4f8hsuvYO9cNEZHJYZAmZT1JRsuFQb-Ub2nQfU/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/bW9ja29mdW4uY29t/L3dwLWNvbnRlbnQv/dXBsb2Fkcy8yMDI1/LzAyL2Rpc2NvcmQt/cGZwLTEzMjc2Mi5q/cGc"
                     className="w-full h-full object-cover rotate-[235deg] rounded-full"
                     alt={name}
                   />
@@ -39,7 +53,11 @@ export default function Page() {
             </div>
           ))}
         </div>
+
         {postContext.isLoading ? (
+          <div>
+          
+            
           <div className="flex items-center justify-center flex-grow">
             <div className="flex items-center space-x-4">
               <Skeleton className="h-12 w-12 rounded-full" />
@@ -49,8 +67,9 @@ export default function Page() {
               </div>
             </div>
           </div>
+          </div>
         ) : (
-          <div className="flex-grow overflow-y-auto">
+          <div className="flex-grow overflow-y-auto ">
             <Posts posts={postContext.posts} handleLike={postContext.handleLike} fetchPost={postContext.fetchPost} />
           </div>
         )}
