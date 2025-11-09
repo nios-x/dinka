@@ -1,4 +1,4 @@
-name: push to gcp
+name: push to gc
 on:
   push:
     branches:
