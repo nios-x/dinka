@@ -1,17 +1,19 @@
-name: push to gc
+name: Push to GC
+
 on:
   push:
     branches:
-      - main  
+      - main
+
 jobs:
-  deploy :
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name:  Checkout repository
+      - name: 🧱 Checkout repository
         uses: actions/checkout@v3
 
-      - name: 🧱 Setup Node.js
+      - name: 🧰 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -21,16 +23,21 @@ jobs:
           npm ci
           npm run build
 
-      - name: 🚀 Deploy to GCP VM
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
+      - name: 🚀 Deploy to GCP VM (Raw SSH)
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          echo "$SSH_PRIVATE_KEY" > private_key.pem
+          chmod 600 private_key.pem
+
+          ssh -o StrictHostKeyChecking=no -i private_key.pem $SSH_USER@$SSH_HOST << 'EOF'
             cd ~/dinka
             git pull origin main
             npm ci
             npm run build
             pm2 restart next-js1
-  
+          EOF
+
+          rm -f private_key.pem
