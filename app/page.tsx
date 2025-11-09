@@ -101,7 +101,7 @@ export default function Page() {
           <div className="text-center">
             <div className="logo text-8xl mb-6 font-bold dark:text-zinc-100">dinka</div>
             <h1 className="text-4xl md:text-6xl font-bold text-zinc-800 dark:text-zinc-100 mb-6">
-              Its a Soumya App 
+              Connect. Share. Discover.
             </h1>
             <p className="text-xl md:text-2xl text-zinc-600 dark:text-zinc-300 mb-8 max-w-3xl mx-auto">
               Dinka is a modern social media platform where you can share posts,
