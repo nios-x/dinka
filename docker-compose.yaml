@@ -1,0 +1,33 @@
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: postgres-db
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+
+  ghost:
+    image: emilol/ghost-cloudinary
+    container_name: ghost-cloudinary
+    restart: unless-stopped
+    depends_on:
+      - db
+    ports:
+      - "2368:2368"
+    environment:
+      url: http://localhost:2368
+      CLOUDINARY_CLOUD_NAME: your_cloud_name
+      CLOUDINARY_API_KEY: your_api_key
+      CLOUDINARY_API_SECRET: your_api_secret
+    volumes:
+      - ghost-content:/var/lib/ghost/content
+
+volumes:
+  postgres-data:
+  ghost-content:

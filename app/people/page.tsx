@@ -26,7 +26,7 @@ export default function Page() {
     });
     if (response.ok) {
       setPeoples((prev) => prev.filter((person) => person.id !== id));
-      toast("You Unfollowed: " + name);
+      toast("You Unfollowed: " + name, { position: "top-center" });
     }
   };
   const handleFollow = async (id: string, name: string, pic: string) => {
@@ -44,7 +44,7 @@ export default function Page() {
     setRequests((prev) => prev.filter((person) => person.id !== id))
     setPeoples((prev) => [...prev, { id, name, pic }]);
 
-    toast("You Followed: " + name);
+    toast("You Followed: " + name, { position: "top-center" });
   };
 
   useEffect(() => {
@@ -69,21 +69,21 @@ export default function Page() {
       setRequests(data.people);
     })();
   }, []);
-const handleReject = async (id: string, name: string) => {
-  const response = await fetch("/api/v1/friends/reject", {
-    body: JSON.stringify({ friendId: id }),
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-  });
+  const handleReject = async (id: string, name: string) => {
+    const response = await fetch("/api/v1/friends/reject", {
+      body: JSON.stringify({ friendId: id }),
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
 
-  if (response.ok) {
-    setRequests((prev) => prev.filter((person) => person.id !== id));
-    toast("You Rejected: " + name);
-  } else {
-    const error = await response.text();
-    console.error("Failed to reject request:", error);
-  }
-};
+    if (response.ok) {
+      setRequests((prev) => prev.filter((person) => person.id !== id));
+      toast("You Rejected: " + name, { position: "top-center" });
+    } else {
+      const error = await response.text();
+      console.error("Failed to reject request:", error);
+    }
+  };
   return (
     <div className="w-full space-y-4 dark:bg-[#121212] min-h-screen">
       <div className="flex justify-end pr-4 gap-x-2">
@@ -100,7 +100,7 @@ const handleReject = async (id: string, name: string) => {
           person={e}
           primaryActionLabel="Accept"
           onPrimaryClick={() => handleFollow(e.id, e.name, e.pic)}
-          onSecondaryClick={()=>handleReject(e.id,e.name)}
+          onSecondaryClick={() => handleReject(e.id, e.name)}
           secondaryActionLabel="Reject"
         />
       ))}

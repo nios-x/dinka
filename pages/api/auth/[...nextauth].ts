@@ -20,6 +20,7 @@ export const authOptions: AuthOptions = {
           where: { email: credentials.email },
         });
 
+        console.log("creds", user)
         if (!user || user.provider !== "Email") return null;
 
         const isValid = await bcrypt.compare(credentials.password, user.password!);
@@ -160,8 +161,8 @@ export const authOptions: AuthOptions = {
   },
 
   pages: {
-    signIn: "/",   
-    error: "/login", 
+    signIn: "/",
+    error: "/login",
   },
 };
 

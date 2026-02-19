@@ -13,17 +13,17 @@ export function SocketProvider({ children }: any) {
   const { data: session }: any = useSession();
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const [peerConnection, setPeerConection] = useState<RTCPeerConnection | null>(null);
-  const [socketMessages, setSocketMessages] = useState<any>([]);
+  const [socketMessages, setSocketMessages] = useState<Record<string, any[]>>({});
   // State to queue ICE candidates before remote description is set
   const [iceCandidatesQueue, setIceCandidatesQueue] = useState<RTCIceCandidate[]>([]);
 
 
-  const send_message = (targetUserID:string, content:string, fromUserID:string) =>{
+  const send_message = (targetUserID: string, content: string, fromUserID: string) => {
     socket?.send(JSON.stringify({
-      targetUserID:targetUserID,
+      targetUserID: targetUserID,
       fromUserID,
       content,
-      type:"foreward_message"
+      type: "foreward_message"
     }))
   }
   useEffect(() => {
@@ -39,42 +39,42 @@ export function SocketProvider({ children }: any) {
   useEffect(() => {
     if (session?.user?.id) {
       const ws = new WebSocket(`${process.env.NEXT_PUBLIC_BACKEND}`);
-    const pc = new RTCPeerConnection({
-  iceServers: [
-    // Google STUN
-    { urls: "stun:stun.l.google.com:19302" },
-    { urls: "stun:stun1.l.google.com:19302" },
-    { urls: "stun:stun2.l.google.com:19302" },
-    { urls: "stun:stun3.l.google.com:19302" },
-    { urls: "stun:stun4.l.google.com:19302" },
+      const pc = new RTCPeerConnection({
+        iceServers: [
+          // Google STUN
+          { urls: "stun:stun.l.google.com:19302" },
+          { urls: "stun:stun1.l.google.com:19302" },
+          { urls: "stun:stun2.l.google.com:19302" },
+          { urls: "stun:stun3.l.google.com:19302" },
+          { urls: "stun:stun4.l.google.com:19302" },
 
-    // Mozilla
-    { urls: "stun:stun.services.mozilla.com" },
+          // Mozilla
+          { urls: "stun:stun.services.mozilla.com" },
 
 
-    // TURN (relay – required for mobile/symmetric NAT)
-    {
-      urls: "turn:relay.metered.ca:80",
-      username: "openai",
-      credential: "openai123",
-    },
-    {
-      urls: "turn:relay.metered.ca:443",
-      username: "openai",
-      credential: "openai123",
-    },
-     {
-      urls: "turn:relay1.expressturn.com:3478",
-      username: "efh73s",
-      credential: "dqwd9QMS8Ne8grmB",
-    },
-    {
-      urls: "turn:relay.metered.ca:443?transport=tcp",
-      username: "openai",
-      credential: "openai123",
-    },
-  ],
-});
+          // TURN (relay – required for mobile/symmetric NAT)
+          {
+            urls: "turn:relay.metered.ca:80",
+            username: "openai",
+            credential: "openai123",
+          },
+          {
+            urls: "turn:relay.metered.ca:443",
+            username: "openai",
+            credential: "openai123",
+          },
+          {
+            urls: "turn:relay1.expressturn.com:3478",
+            username: "efh73s",
+            credential: "dqwd9QMS8Ne8grmB",
+          },
+          {
+            urls: "turn:relay.metered.ca:443?transport=tcp",
+            username: "openai",
+            credential: "openai123",
+          },
+        ],
+      });
 
       setPeerConection(pc);
       ws.onopen = () => {
@@ -104,8 +104,18 @@ export function SocketProvider({ children }: any) {
 
       ws.onmessage = async (event) => {
         const message = JSON.parse(event.data);
-        if(message.type === "forewarded_message"){
-          setSocketMessages((e:any) => ([...e, message]));
+        if (message.type === "forewarded_message") {
+          // ✅ Security Fix: Filter messages not intended for this user
+          if (message.targetUserID !== session?.user?.id) {
+            console.warn("Received message for another user, ignoring.");
+            return;
+          }
+
+          const otherUserId = message.fromUserID;
+          setSocketMessages((prev: any) => ({
+            ...prev,
+            [otherUserId]: [...(prev[otherUserId] || []), message]
+          }));
         }
         else if (message.type === "incoming_call") {
           setRemoteUser(message.fromUserID);
@@ -222,16 +232,16 @@ export function SocketProvider({ children }: any) {
   }
 
   return (
-  <SocketContext.Provider
-  value={{
-    createCall,
-    socketMessages,
-    setSocketMessages, // 🧩 added
-    send_message,
-  }}
->
-  {children}
-</SocketContext.Provider>
+    <SocketContext.Provider
+      value={{
+        createCall,
+        socketMessages,
+        setSocketMessages,
+        send_message,
+      }}
+    >
+      {children}
+    </SocketContext.Provider>
   );
 }
 

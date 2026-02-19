@@ -16,6 +16,18 @@ import {
 import { DialogDemo } from "./Options";
 import share from "@/components/Posts/sharecall";
 import { Toaster } from "../ui/sonner";
+import useLongPress from "@/app/hooks/useLongPress";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useSession } from "next-auth/react";
 
 type PostProps = {
   id: number;
@@ -56,6 +68,18 @@ export default function Post({
   redir?: boolean;
   authorId: string;
 }) {
+  const { data: session }: any = useSession();
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
+
+  const longPressProps = useLongPress({
+    onLongPress: () => {
+      if (session?.user?.id === authorId) {
+        setIsDeleteDialogOpen(true);
+      }
+    },
+    delay: 500,
+  });
+
   const visibilityIcon =
     visibility === "Public" ? (
       <Globe className="w-4 h-4 text-blue-500" />
@@ -69,130 +93,174 @@ export default function Post({
     "https://imgs.search.brave.com/iiL6FIsWn1W2fHExlUdzmEXVolOVkj4jfy06SrdfTf8/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9jZG4x/LnZlY3RvcnN0b2Nr/LmNvbS9pL3RodW1i/LWxhcmdlLzk3Lzcw/L3B1cnBsZS11c2Vy/LWljb24taW4tdGhl/LWNpcmNsZS1hLXNv/bGlkLWdyYWRpZW50/LXZlY3Rvci0yMzUx/OTc3MC5qcGc";
 
   return (
-    <div className="mb-6  overflow-hidden w-full max-w-xl mx-auto p-4 bg-white dark:bg-black rounded-lg border border-zinc-100 dark:border-zinc-800 transition-all duration-300">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        {/* Author Info */}
-        <Link href={`/profile?id=${authorId}`} className="flex items-center">
-          <div className="bg-gradient-to-tr from-rose-500 via-purple-500 to-cyan-500 p-[1.8px] rounded-full">
-            <div className="p-[2px] bg-white dark:bg-black rounded-full">
-              <div className="relative w-9 h-9 rounded-full overflow-hidden">
-                <Toaster />
-                <Image
-                  src={profileImg}
-                  alt={author.name}
-                  fill
-                  className="object-cover"
-                />
+    <>
+      <div
+        {...longPressProps}
+        className="group mb-6 overflow-hidden w-full max-w-2xl mx-auto p-4 sm:p-6 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-md rounded-xl border border-zinc-100 dark:border-zinc-800 shadow-sm transition-all duration-300 select-none cursor-pointer relative"
+      >
+
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          {/* Author Info */}
+          <Link
+            href={`/profile?id=${authorId}`}
+            className="flex items-center"
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
+          >
+            <div className="relative w-10 h-10 rounded-full overflow-hidden border border-zinc-200 dark:border-zinc-800">
+              <Image
+                src={profileImg}
+                alt={author.name}
+                fill
+                className="object-cover"
+              />
+            </div>
+
+            <div className="flex flex-col px-3">
+              <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                {author.name}
+              </p>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="text-[10px] text-zinc-500 font-medium">
+                  {formatDistanceToNow(new Date(createdAt), { addSuffix: true })}
+                </span>
+                {visibilityIcon}
               </div>
             </div>
-          </div>
+          </Link>
 
-          <div className="flex flex-col px-3">
-            <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-              {author.name}
-            </p>
-            <p className="text-xs flex items-center gap-1 text-zinc-500">
-              <Calendar size={10} />{" "}
-              {formatDistanceToNow(new Date(createdAt), { addSuffix: true })}
-            </p>
+          {/* Post Options */}
+          <div
+            className="flex items-center gap-2 text-zinc-400"
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
+          >
+            <span className="text-[10px] font-bold uppercase tracking-wider">{visibility}</span>
+            {hidedel && (
+              <DialogDemo btnClick={() => handleDelete?.(id)} />
+            )}
+            <EllipsisVertical className="w-4 h-4 opacity-40" />
           </div>
-        </Link>
-
-        {/* Post Options */}
-        <div className="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-800 text-xs rounded-full px-4 py-2 text-zinc-600 dark:text-zinc-300">
-          {visibilityIcon}
-          <span>{visibility}</span>
-          {hidedel && (
-            <DialogDemo btnClick={() => handleDelete?.(id)} />
-          )}
-          <EllipsisVertical className="w-4 h-4 opacity-70" />
         </div>
-      </div>
 
-      {/* Media */}
-      {isMedia && mediaUrl && (
-        <Link href={mediaUrl}>
-          <div className="relative w-screen left-1/2 right-1/2 -mx-[50vw] mt-4 bg-black overflow-hidden">
-            <div className="relative w-full" style={{ aspectRatio: "1 / 1" }}>
+        {/* Caption (Full post view style) */}
+        {!redir && (
+          <p className="mb-5 text-[16px] leading-relaxed text-zinc-800 dark:text-zinc-200 font-medium px-1">
+            {title}
+          </p>
+        )}
+
+        {/* Media */}
+        {isMedia && mediaUrl && (
+          <Link
+            href={mediaUrl}
+            className="block -mx-4 sm:-mx-6 bg-zinc-50 dark:bg-zinc-900 overflow-hidden relative group/media mb-4 border-y border-zinc-100 dark:border-zinc-800"
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
+          >
+            <div className="relative w-full aspect-square max-h-[600px]">
               <Image
                 src={mediaUrl}
                 alt="Post media"
                 fill
-                quality={100}
-                priority={false}
-                className="object-cover sm:object-contain"
-                sizes="100vw"
+                quality={90}
+                className="object-cover lg:object-contain transition-opacity duration-300 group-hover:opacity-95"
+                sizes="(max-width: 768px) 100vw, 800px"
               />
             </div>
+          </Link>
+        )}
+
+        {/* Caption (Feed style) */}
+        {redir && (
+          <Link
+            href={`/postid/${id}`}
+            className="block mb-6"
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
+          >
+            <p className="text-[15px] leading-relaxed text-zinc-700 dark:text-zinc-300 px-2 line-clamp-3">
+              <span className="font-extrabold text-zinc-900 dark:text-zinc-100 mr-2">{author.name}</span>
+              {title}
+            </p>
+          </Link>
+        )}
+
+        {/* Action Bar */}
+        <div className="flex items-center justify-between pt-2 px-1">
+          <div className="flex items-center gap-6">
+            {/* ❤️ Like */}
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleLike(id, !isLiked);
+              }}
+              onTouchStart={(e) => e.stopPropagation()}
+              onTouchEnd={(e) => e.stopPropagation()}
+              className="flex items-center gap-2 transition-all group"
+            >
+              <Heart
+                fill={isLiked ? "currentColor" : "none"}
+                strokeWidth={2}
+                className={`w-6 h-6 transition-transform duration-200 ${isLiked ? "text-rose-500 scale-110" : "text-zinc-600 dark:text-zinc-400 group-hover:text-rose-500"}`}
+              />
+              {likes > 0 && (
+                <span className={`text-[13px] font-bold ${isLiked ? "text-rose-500" : "text-zinc-600 dark:text-zinc-400"}`}>
+                  {likes}
+                </span>
+              )}
+            </button>
+
+            {/* 💬 Comment */}
+            <Link
+              href={`/postid/${id}`}
+              className="flex items-center transition-all group"
+              onClick={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+              onTouchEnd={(e) => e.stopPropagation()}
+            >
+              <MessageCircle strokeWidth={2} className="w-6 h-6 text-zinc-600 dark:text-zinc-400 group-hover:text-blue-500 transition-colors" />
+            </Link>
+
+            {/* 🔗 Share */}
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                share(id);
+              }}
+              onTouchStart={(e) => e.stopPropagation()}
+              onTouchEnd={(e) => e.stopPropagation()}
+              className="flex items-center transition-all group"
+            >
+              <Share2 strokeWidth={2} className="w-6 h-6 text-zinc-600 dark:text-zinc-400 group-hover:text-emerald-500 transition-colors" />
+            </button>
           </div>
-        </Link>
-      )}
+        </div>
+      </div>
 
-     {/* Action Buttons */}
-<div className="flex items-center justify-between pt-4 px-1 text-zinc-600 dark:text-zinc-300">
-  <div className="flex items-center gap-4">
-    {/* ❤️ Like */}
-    <button
-      onClick={() => handleLike(id, !isLiked)}
-      aria-label="Like"
-      className="flex items-center gap-2 transition-all group"
-    >
-      <Heart
-        fill={isLiked ? "currentColor" : "none"}
-        strokeWidth={2.2}
-        className={`w-6 h-6 transition-all ${
-          isLiked
-            ? "text-rose-500 scale-110"
-            : "group-hover:text-rose-500 text-zinc-800 dark:text-zinc-200 group-hover:scale-105"
-        }`}
-      />
-      <span className="text-md font-extrabold select-none">
-        {likes > 0 ? likes : ""}
-      </span>
-    </button>
-
-    {/* 💬 Comment */}
-    <Link
-      href={`/postid/${id}`}
-      aria-label="Comment"
-      className="flex items-center gap-2 transition-all group"
-    >
-      <MessageCircle
-        strokeWidth={2.2}
-        className="w-6 h-6 group-hover:text-blue-500 group-hover:scale-105 text-zinc-800 dark:text-zinc-200 transition-all"
-      />
-    </Link>
-
-    {/* 🔗 Share */}
-    <button
-      onClick={() => share(id)}
-      aria-label="Share"
-      className="flex items-center gap-2 transition-all group"
-    >
-      <Share2
-        strokeWidth={2.2}
-        className="w-6 h-6 group-hover:text-green-500 group-hover:scale-105 text-zinc-800 dark:text-zinc-200 transition-all"
-      />
-    </button>
-  </div>
-</div>
-
-
-      {/* Caption */}
-      {redir ? (
-        <Link href={`/postid/${id}`}>
-          <p className="mt-2 text-[13px] font-medium px-1 text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap">
-           <span className="text-sm font-extrabold">
-              {title.length ?author.name:""}
-            </span> {title}
-          </p>
-        </Link>
-      ) : (
-        <p className="mt-2 text-[14.6px] px-2 text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap">
-          {title}
-        </p>
-      )}
-    </div>
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Post?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete your post and all its comments.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => handleDelete?.(id)} className="bg-red-500 hover:bg-red-600 font-extrabold text-white">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

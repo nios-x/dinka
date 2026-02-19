@@ -1,19 +1,36 @@
 "use client";
+
 import React, { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSocket } from "../hooks/videosocket";
 import { useSession } from "next-auth/react";
 import { Send } from "lucide-react";
+import useLongPress from "../hooks/useLongPress";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
-export default function StickyInput() {
+export default function ChatPage() {
   const searchParams = useSearchParams();
   const toId = searchParams?.get("id");
   const { data: session }: any = useSession();
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
+  const [selectedMessage, setSelectedMessage] = useState<any>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const { socketMessages, send_message, setSocketMessages } = useSocket();
+
+  const currentMessages = toId ? socketMessages[toId] || [] : [];
 
   // 🔹 Fetch chat history
   useEffect(() => {
@@ -22,7 +39,10 @@ export default function StickyInput() {
       try {
         const res = await fetch(`/api/v1/chats/getall?id=${toId}`);
         const body = await res.json();
-        setSocketMessages(body.reverse());
+        setSocketMessages((prev: any) => ({
+          ...prev,
+          [toId]: body.reverse()
+        }));
       } catch (err) {
         console.error("Failed to fetch chats:", err);
       } finally {
@@ -37,7 +57,7 @@ export default function StickyInput() {
       chatContainerRef.current.scrollTop =
         chatContainerRef.current.scrollHeight;
     }
-  }, [socketMessages]);
+  }, [currentMessages]);
 
   // 🔹 Send message
   const handleSend = async () => {
@@ -53,12 +73,43 @@ export default function StickyInput() {
 
       if (res.ok) {
         const newChat = await res.json();
-        setSocketMessages((prev: any) => [...prev, newChat.message]);
+        setSocketMessages((prev: any) => ({
+          ...prev,
+          [toId]: [...(prev[toId] || []), newChat.message]
+        }));
       }
     } catch (err) {
       console.error("Error sending message:", err);
     } finally {
       setMessage("");
+    }
+  };
+
+  const handleDeleteMessage = async () => {
+    if (!selectedMessage || !toId) return;
+
+    try {
+      const res = await fetch("/api/v1/chats/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chatId: selectedMessage.id }),
+      });
+
+      if (res.ok) {
+        setSocketMessages((prev: any) => ({
+          ...prev,
+          [toId]: prev[toId].filter((m: any) => m.id !== selectedMessage.id)
+        }));
+        toast.success("Message deleted");
+      } else {
+        const error = await res.json();
+        toast.error(error.error || "Failed to delete message");
+      }
+    } catch (err) {
+      toast.error("An error occurred");
+    } finally {
+      setIsDeleteDialogOpen(false);
+      setSelectedMessage(null);
     }
   };
 
@@ -76,38 +127,30 @@ export default function StickyInput() {
         ref={chatContainerRef}
         className="flex-1 overflow-y-auto flex flex-col px-4 pb-24 pt-3 space-y-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700"
       >
-        {socketMessages.length === 0 ? (
+        {currentMessages.length === 0 ? (
           <p className="text-center text-gray-400 mt-10">
             No messages yet 👀 — start the conversation!
           </p>
         ) : (
-          socketMessages.map((chat: any, i: number) => {
+          currentMessages.map((chat: any, i: number) => {
             const isMe = chat.fromId === session?.user?.id;
             return (
-              <div
+              <ChatMessage
                 key={chat.id || `socket-${i}`}
-                className={`flex w-full ${
-                  isMe ? "justify-end" : "justify-start"
-                }`}
-              >
-                <div
-                  className={`relative break-words  px-4 py-2 rounded-2xl text-sm sm:text-base max-w-[75%] shadow-md animate-fadeIn
-                    ${
-                      isMe
-                        ? "bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500 text-white rounded-tr-none"
-                        : "bg-gradient-to-br from-gray-200 to-gray-100 dark:from-gray-700 dark:to-gray-800 dark:text-gray-100 rounded-tl-none"
-                    }`}
-                >
-                  {chat.message || <i>📎 {chat.mediaUrl}</i>}
-                </div>
-              </div>
+                chat={chat}
+                isMe={isMe}
+                onLongPress={() => {
+                  setSelectedMessage(chat);
+                  setIsDeleteDialogOpen(true);
+                }}
+              />
             );
           })
         )}
       </div>
 
       {/* 📝 Input bar */}
-      <div className="fixed bottom-0 left-0 right-0 px-3 py-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-t border-gray-200 dark:border-gray-800 flex items-center gap-2 shadow-lg">
+      <div className="fixed bottom-0 left-0 right-0 px-3 py-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-t border-gray-200 dark:border-gray-800 flex items-center gap-2 shadow-lg z-20">
         <input
           type="text"
           value={message}
@@ -122,6 +165,47 @@ export default function StickyInput() {
         >
           <Send size={18} />
         </button>
+      </div>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Message?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this message? This only removes it for you.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteMessage} className="bg-red-500 hover:bg-red-600 font-extrabold text-white">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
+
+function ChatMessage({ chat, isMe, onLongPress }: any) {
+  const longPressProps = useLongPress({
+    onLongPress,
+    delay: 500
+  });
+
+  return (
+    <div
+      className={`flex w-full ${isMe ? "justify-end" : "justify-start"}`}
+      {...longPressProps}
+    >
+      <div
+        className={`relative break-words px-4 py-2 rounded-2xl text-sm sm:text-base max-w-[75%] shadow-md animate-fadeIn cursor-pointer transition-transform active:scale-95 select-none
+          ${isMe
+            ? "bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500 text-white rounded-tr-none"
+            : "bg-gradient-to-br from-gray-200 to-gray-100 dark:from-gray-700 dark:to-gray-800 dark:text-gray-100 rounded-tl-none"
+          }`}
+      >
+        {chat.message || <i>📎 {chat.mediaUrl}</i>}
       </div>
     </div>
   );

@@ -230,7 +230,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "C:\\Users\\dkjdi\\Desktop\\dinka\\generated\\prisma",
+      "value": "C:\\Users\\dkjdi\\OneDrive\\Desktop\\dinka\\generated\\prisma",
       "fromEnvVar": null
     },
     "config": {
@@ -244,7 +244,7 @@ const config = {
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "C:\\Users\\dkjdi\\Desktop\\dinka\\prisma\\schema.prisma",
+    "sourceFilePath": "C:\\Users\\dkjdi\\OneDrive\\Desktop\\dinka\\prisma\\schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
@@ -258,7 +258,6 @@ const config = {
     "db"
   ],
   "activeProvider": "postgresql",
-  "postinstall": false,
   "inlineDatasources": {
     "db": {
       "url": {

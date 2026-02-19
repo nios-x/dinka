@@ -28,7 +28,7 @@ import { useRouter } from "next/navigation"
 export function LoginForm({
   className,
   ...props
-}:any) {
+}: any) {
   const [stage, setStage] = useState(props.stage || 0)
   const [otp, setOtp] = useState("")
   const [credentials, setCredentials] = useState({
@@ -37,9 +37,9 @@ export function LoginForm({
   })
   const { data: session } = useSession()
   const router = useRouter()
-   if (session) {
+  if (session) {
     return (
-       <div className="text-center ">
+      <div className="text-center ">
         Signed in as {session?.user?.email} <br />
         <button onClick={() => signOut()}>Sign out</button>
       </div>
@@ -75,24 +75,24 @@ export function LoginForm({
         setStage(data.stage)
       }
     }
-      if (stage === 1) {
-          const res = await signIn("email-otp", {
-            email: credentials.email,
-            otp: otp,
-            password: credentials.password,
-            redirect: true,
-            callbackUrl: "/"
-            });
+    if (stage === 1) {
+      const res = await signIn("email-otp", {
+        email: credentials.email,
+        otp: otp,
+        password: credentials.password,
+        redirect: true,
+        callbackUrl: "/"
+      });
 
-            if (res?.error) {
-              toast.error("OTP Login failed.");
-            } else {
-              toast.success("Logged in!");
-        }
+      if (res?.error) {
+        toast.error("OTP Login failed.");
+      } else {
+        toast.success("Logged in!");
       }
-      
     }
-  
+
+  }
+
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
@@ -113,7 +113,7 @@ export function LoginForm({
                       {/* Apple Logo */}
                       Login with Apple
                     </Button>
-                    <Button variant="outline" className="w-full" onClick={()=>{ signIn("google",{    callbackUrl: "/"});}}>
+                    <Button variant="outline" className="w-full" onClick={() => { signIn("google", { callbackUrl: "/" }); }}>
                       {/* Google Logo */}
                       Login with Google
                     </Button>

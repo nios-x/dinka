@@ -73,28 +73,42 @@ export default function Page() {
     }
   };
 
+  const likeTimeoutRef = React.useRef<{ [key: number]: NodeJS.Timeout }>({});
+
   const handleLike = async (id: number, whatToDo: boolean) => {
-    try {
-      const res = await fetch(`/api/v1/togglelike`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, whatToDo }),
-      });
-      if (!res.ok) throw new Error("Like failed");
-      setUserPosts((prev) =>
-        prev.map((e) =>
-          e.id === id
-            ? {
-                ...e,
-                isLiked: whatToDo,
-                likes: Math.max(0, e.likes + (whatToDo ? 1 : -1)),
-              }
-            : e
-        )
-      );
-    } catch (err) {
-      console.error(err);
+    // 1. Optimistic UI Update
+    setUserPosts((prev) =>
+      prev.map((e) =>
+        e.id === id
+          ? {
+            ...e,
+            isLiked: whatToDo,
+            likes: Math.max(0, e.likes + (whatToDo ? 1 : -1)),
+          }
+          : e
+      )
+    );
+
+    // 2. Debounce API Call
+    if (likeTimeoutRef.current[id]) {
+      clearTimeout(likeTimeoutRef.current[id]);
     }
+
+    likeTimeoutRef.current[id] = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/v1/togglelike`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id, whatToDo }),
+        });
+        if (!res.ok) throw new Error("Like failed");
+        delete likeTimeoutRef.current[id];
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to sync like status");
+        // Optional: Revert UI if needed, but usually better to stay optimistic
+      }
+    }, 500); // 500ms debounce
   };
 
   const handleDelete = async (postid: number) => {
