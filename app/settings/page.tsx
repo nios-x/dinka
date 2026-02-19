@@ -194,7 +194,6 @@ export default function SettingsPage() {
                                 <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
 
 
-                                            // ... JSX ...
                                     <div className="flex items-center gap-6">
                                         <div
                                             className="relative group cursor-pointer"
