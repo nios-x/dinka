@@ -10,7 +10,7 @@ import app from '@/dinka-config'
 import { useSession } from 'next-auth/react'
 export default function footer({ addpost, setIsLoading }: any) {
     const path = usePathname()
-    const session = useSession()
+    const session: any = useSession()
     if (session.data === null) return <></>
     if (!app.footer.includes(path || "/")) return <></>
     return (
