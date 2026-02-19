@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@faker-js/faker": "^10.1.0",
+    "@google/generative-ai": "^0.24.1",
     "@gsap/react": "^2.1.2",
     "@heroicons/react": "^2.2.0",
     "@prisma/client": "^6.12.0",

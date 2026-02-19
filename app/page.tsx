@@ -15,9 +15,29 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+// ... imports ...
+import { useEffect } from "react";
+
 export default function Page() {
   const { data: session, status } = useSession();
   const postContext = usePostContext();
+
+  useEffect(() => {
+    // Check if we've already tried to trigger a Gemini post this session
+    const hasTriggered = sessionStorage.getItem("gemini_trigger");
+    if (!hasTriggered) {
+      sessionStorage.setItem("gemini_trigger", "true");
+
+      // 30% chance to trigger a post
+      if (Math.random() < 0.3) {
+        console.log("Triggering Gemini Auto-Post...");
+        fetch("/api/v1/gemini/auto-post", { method: "POST" })
+          .then(res => res.json())
+          .then(data => console.log("Gemini Auto-Post Result:", data))
+          .catch(err => console.error("Gemini Auto-Post Error:", err));
+      }
+    }
+  }, []);
 
   // If authenticated, show the main feed
   if (status === "authenticated" && session) {

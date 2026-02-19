@@ -10,12 +10,13 @@ import {
     SheetTrigger,
     SheetClose
 } from "@/components/ui/sheet";
-import { Settings, Moon, Sun } from "lucide-react";
+import { Settings, Moon, Sun, Sparkles } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
+import { toast } from "sonner";
 
 export function SettingsSlider() {
     const { theme, setTheme } = useTheme();
