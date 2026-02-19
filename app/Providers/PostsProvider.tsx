@@ -4,7 +4,7 @@ import type { PostType } from "@/lib/types";
 import { useSession } from "next-auth/react";
 import Footer from "@/components/footer";
 import { Toaster } from "@/components/ui/sonner";
-
+import { toast } from "sonner";
 type PostContextType = {
   posts: PostType[];
   addPost: (post: PostType) => void;
@@ -12,6 +12,7 @@ type PostContextType = {
   isLoading: boolean;
   handleLike: (id: number, whatToDo: boolean) => void;
   fetchPost: () => void;
+  handleDelete: (id: number) => void;
 };
 const PostContext = createContext<PostContextType | null>(null);
 
@@ -57,25 +58,26 @@ export const PostProvider = ({ children }: { children: React.ReactNode }) => {
   const addPost = (post: PostType) => {
     setPosts((prev) => [post, ...prev]);
   };
-  // const handlleDelete = async (postid:number) => {
-  //   const res = await fetch("/api/v1/deletepost", {
-  //     method:"POST",
-  //     body:JSON.stringify({postId:postid}),
-  //     headers:{
-  //       "Content-Type":"application/json"
-  //     }
-  //   })
-  //   const body = await res.json();
-  //   if(body.error){
-  //     toast.error(body.error)
-  //     return;
-  //   }
-  //   if(body.message){
-  //     toast.success(body.message)
-  //     setPosts((posts)=>posts.filter(e=>e.id!==postid))
+  const handleDelete = async (postid: number) => {
+    const res = await fetch("/api/v1/deletepost", {
+      method: "POST",
+      body: JSON.stringify({ postid: postid }),
+      headers: {
+        "Content-Type": "application/json"
+      }
+    })
+    const body = await res.json();
+    if (body.error) {
+      toast.error(body.error)
+      return;
+    }
+    if (body.message) {
+      toast.success(body.message)
+      setPosts((posts) => posts.filter(e => e.id !== postid))
 
-  //   }
-  // }
+    }
+  }
+
 
   const useDebouncedLike = (delay = 300) => {
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -126,7 +128,7 @@ export const PostProvider = ({ children }: { children: React.ReactNode }) => {
   };
   const handleLike = useDebouncedLike(800);
   return (
-    <PostContext.Provider value={{ posts, addPost, isLoading, setIsLoading, handleLike, fetchPost }}>
+    <PostContext.Provider value={{ posts, addPost, isLoading, setIsLoading, handleLike, fetchPost, handleDelete }}>
       <Toaster />
       {children}
       <Footer addpost={addPost} setIsLoading={setIsLoading} />

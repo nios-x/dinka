@@ -11,7 +11,7 @@ import { useSession } from 'next-auth/react'
 export default function footer({ addpost, setIsLoading }: any) {
     const path = usePathname()
     const session = useSession()
-    if(session.data===null)return <></>
+    if (session.data === null) return <></>
     if (!app.footer.includes(path || "/")) return <></>
     return (
         <footer className="w-full fixed bottom-0 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md backdrop-saturate-[1.8] z-30 pb-3 pt-1 border-t border-gray-200 dark:border-zinc-700">
@@ -31,10 +31,10 @@ export default function footer({ addpost, setIsLoading }: any) {
                     <div className="relative flex h-full items-center gap-1.5 rounded-full opacity-50 hover:opacity-100 tablet:pl-3 px-1.5 py-2 text-gray-700 dark:text-gray-300">
                         <CreatePost addpost={addpost} setIsLoading={setIsLoading} />
                     </div>
-                    
+
                     <Link className={`relative text-2xl flex h-full items-center gap-1.5 rounded-full px-4 ${path === '/chats' ? "opacity-100" : "opacity-50"} hover:opacity-100 tablet:pl-3 text-gray-700 dark:text-gray-300`} href="/chats">
                         <MessageCircleIcon strokeWidth={2.5} /><span className="sr-only">Chats</span></Link>
-                    <Link href={"/profile"}>
+                    <Link href={`/profile?id=${session.data?.user?.id}`}>
                         <button className="relative flex h-full items-center gap-1.5 rounded-full px-4 hover:opacity-100 tablet:pl-3 opacity-100">
                             <div className={`${path === '/profile' ? "opacity-100" : "opacity-50"} text-gray-700 dark:text-gray-300`} >
                                 <div className="flex items-center" id="radix-:r9g:" aria-haspopup="menu" aria-expanded="false" data-state="closed">

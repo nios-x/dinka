@@ -91,7 +91,7 @@ export default function Page() {
         ) : (
           <div className="flex-grow overflow-y-auto p-2 ">
             <div className=""></div>
-            <Posts posts={postContext.posts} handleLike={postContext.handleLike} fetchPost={postContext.fetchPost} />
+            <Posts posts={postContext.posts} handleLike={postContext.handleLike} fetchPost={postContext.fetchPost} handleDelete={postContext.handleDelete} />
           </div>
         )}
       </div>

@@ -9,6 +9,7 @@ import Post from "@/components/Posts/Post";
 import { useSocket } from "@/app/hooks/videosocket";
 import { toast } from "sonner";
 import { Loader } from "../../components/Loader/Loader";
+import { useSession } from "next-auth/react";
 
 export default function Page() {
   const [data, setData] = useState<any>(null);
@@ -18,7 +19,8 @@ export default function Page() {
   const router = useSearchParams();
   const [hasMore, setHasMore] = useState(true);
   const linkrouter = useRouter();
-  const id = router?.get("id");
+  const { data: session }: any = useSession();
+  const id = router?.get("id") || session?.user?.id;
   const { createCall } = useSocket();
 
   useEffect(() => {

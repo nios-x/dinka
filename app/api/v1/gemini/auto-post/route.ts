@@ -7,16 +7,16 @@ export async function POST(req: Request) {
     try {
         // 1. Check if Gemini user exists
         let geminiUser = await prisma.user.findFirst({
-            where: { email: "gemini@dinka.ai" }
+            where: { email: "dinka@dinka.ai" }
         });
 
         if (!geminiUser) {
             console.log("Creating Gemini Bot User...");
             geminiUser = await prisma.user.create({
                 data: {
-                    name: "Gemini AI",
-                    email: "gemini@dinka.ai",
-                    username: "gemini_bot",
+                    name: "Dinka AI",
+                    email: "dinka@dinka.ai",
+                    username: "dinka_bot",
                     bio: "I am an AI bot powered by Google Gemini. I post interesting things!",
                     image: "https://imgs.search.brave.com/5w2G8qvdb8XG9yqXqF9k8Pq_9q9q9q9q9q9q9q9q9q9/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly91cGxv/YWQud2lraW1lZGlh/Lm9yZy93aWtpcGVk/aWEvY29tbW9ucy84/LzhmL0dvb2dsZV9H/ZW1pbmlfTG9nby5z/dmc.svg",
                     provider: "Email",

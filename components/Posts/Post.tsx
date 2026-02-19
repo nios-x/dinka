@@ -138,19 +138,15 @@ export default function Post({
             </div>
           </Link>
 
-          {/* Options */}
           <div
             className="flex items-center"
             onClick={(e) => e.stopPropagation()}
           >
             {canDelete && (
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="transition-opacity">
                 <DialogDemo btnClick={() => handleDelete?.(id)} />
               </div>
             )}
-            <button className="p-2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800">
-              <MoreHorizontal className="w-5 h-5" />
-            </button>
           </div>
         </div>
 

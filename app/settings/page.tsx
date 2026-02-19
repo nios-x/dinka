@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
     User,
     Shield,
@@ -31,6 +31,44 @@ export default function SettingsPage() {
         bio: "",
         image: ""
     });
+
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Optimistic UI update or loading state
+        const toastId = toast.loading("Uploading image...");
+
+        try {
+            const formData = new FormData();
+            formData.append("file", file);
+
+            const res = await fetch("/api/v1/user/upload-image", {
+                method: "POST",
+                body: formData,
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.error || "Upload failed");
+            }
+
+            if (data.url) {
+                setUserData(prev => ({ ...prev, image: data.url }));
+                toast.success("Image uploaded! Don't forget to save changes.", { id: toastId });
+            }
+        } catch (error) {
+            console.error("Upload error:", error);
+            toast.error("Failed to upload image", { id: toastId });
+        } finally {
+            // Reset input so same file can be selected again if needed
+            if (fileInputRef.current) fileInputRef.current.value = "";
+        }
+    };
+
 
     React.useEffect(() => {
         if (session?.user) {
@@ -154,11 +192,17 @@ export default function SettingsPage() {
                             {/* Profile Settings */}
                             {activeTab === "profile" && (
                                 <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+
+
+                                            // ... JSX ...
                                     <div className="flex items-center gap-6">
-                                        <div className="relative group cursor-pointer">
+                                        <div
+                                            className="relative group cursor-pointer"
+                                            onClick={() => fileInputRef.current?.click()}
+                                        >
                                             <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-zinc-100 dark:border-zinc-800">
                                                 <Image
-                                                    src={session?.user?.image || "https://imgs.search.brave.com/iiL6FIsWn1W2fHExlUdzmEXVolOVkj4jfy06SrdfTf8/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9jZG4x/LnZlY3RvcnN0b2Nr/LmNvbS9pL3RodW1i/LWxhcmdlLzk3Lzcw/L3B1cnBsZS11c2Vy/LWljb24taW4tdGhl/LWNpcmNsZS1hLXNv/bGlkLWdyYWRpZW50/LXZlY3Rvci0yMzUx/OTc3MC5qcGc"}
+                                                    src={userData.image || session?.user?.image || "https://imgs.search.brave.com/iiL6FIsWn1W2fHExlUdzmEXVolOVkj4jfy06SrdfTf8/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9jZG4x/LnZlY3RvcnN0b2Nr/LmNvbS9pL3RodW1i/LWxhcmdlLzk3Lzcw/L3B1cnBsZS11c2Vy/LWljb24taW4tdGhl/LWNpcmNsZS1hLXNv/bGlkLWdyYWRpZW50/LXZlY3Rvci0yMzUx/OTc3MC5qcGc"}
                                                     alt="Profile"
                                                     width={96}
                                                     height={96}
@@ -169,6 +213,15 @@ export default function SettingsPage() {
                                                 <Upload className="w-6 h-6 text-white" />
                                             </div>
                                         </div>
+
+                                        <input
+                                            type="file"
+                                            ref={fileInputRef}
+                                            className="hidden"
+                                            accept="image/*"
+                                            onChange={handleImageUpload}
+                                        />
+
                                         <div>
                                             <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
                                                 {session?.user?.name || "User"}
@@ -176,7 +229,12 @@ export default function SettingsPage() {
                                             <p className="text-sm text-zinc-500 dark:text-zinc-400">
                                                 {session?.user?.email || "user@example.com"}
                                             </p>
-                                            <Button variant="outline" size="sm" className="mt-2 h-8">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="mt-2 h-8"
+                                                onClick={() => fileInputRef.current?.click()}
+                                            >
                                                 Change Picture
                                             </Button>
                                         </div>

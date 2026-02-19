@@ -7,10 +7,12 @@ export default function Posts({
   posts,
   handleLike,
   fetchPost,
+  handleDelete
 }: {
   posts: any;
   handleLike: any;
   fetchPost: any;
+  handleDelete: any;
 }) {
   return (
     <div className='w-full max-w-2xl mx-auto'>
@@ -40,6 +42,7 @@ export default function Posts({
               <Post
                 hidedel={false}
                 handleLike={handleLike}
+                handleDelete={handleDelete}
                 redir={true}
                 isLiked={e.isLiked}
                 likes={e.likes}
