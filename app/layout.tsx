@@ -41,7 +41,7 @@ export default function RootLayout({
           content="ca-pub-6922023305389397"
         />
       </head>
-      <body className="bg-zinc-50 dark:bg-[#121212] antialiased min-h-screen">
+      <body className="antialiased min-h-screen">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -52,12 +52,14 @@ export default function RootLayout({
             <PostProvider>
               <SocketProvider>
                 {/* ✅ Sticky Navbar Wrapper */}
-                <div className="sticky top-0 z-50 bg-zinc-50 dark:bg-[#121212] shadow-sm">
-                  <NavBar />
+                <div className="sticky top-0 z-50 bg-white/70 dark:bg-[#121212]/70 backdrop-blur-xl border-b border-zinc-200/50 dark:border-zinc-800/50">
+                  <div className="pt-15">
+                    <NavBar />
+                  </div>
                 </div>
 
                 {/* ✅ Page Content */}
-                <main className="pt-16">
+                <main className="pt-4">
                   {children}
                 </main>
               </SocketProvider>

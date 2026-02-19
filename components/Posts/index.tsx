@@ -13,43 +13,52 @@ export default function Posts({
   fetchPost: any;
 }) {
   return (
-    <div className=''>
+    <div className='w-full max-w-2xl mx-auto'>
       <InfiniteScroll
         next={fetchPost} // Pass query param to your fetch function if needed
         dataLength={posts.length}
         hasMore={true}
         loader={<Loader />}
         endMessage={
-          <p style={{ textAlign: "center" }}>
+          <p className="text-center text-zinc-500 py-8 text-sm">
             <b>You have seen it all</b>
           </p>
         }
-        refreshFunction={() => {}}
+        refreshFunction={() => { }}
         pullDownToRefresh
         pullDownToRefreshThreshold={50}
         pullDownToRefreshContent={<></>}
         releaseToRefreshContent={<></>}>
-        {posts?.map((e: any) => (
-          <Post
-            hidedel={false}
-            handleLike={handleLike}
-            redir={true}
-            isLiked={e.isLiked}
-            likes={e.likes}
-            id={e.id}
-            key={e.id}
-            title={e.title}
-            visibility={e.visiblity}
-            author={{
-              name: e.author.name ? e.author.name : "Unknown",
-              image: e.author.pic,
-            }}
-            createdAt={e.createdAt}
-            isMedia={e.isMedia}
-            mediaUrl={e.mediaurl}
-            authorId={e.authorId}
-          />
-        ))}
+
+        <div className="flex flex-col gap-6 pb-20">
+          {posts?.map((e: any, index: number) => (
+            <div
+              key={e.id}
+              className="animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both"
+              style={{ animationDelay: `${index * 50}ms` }}
+            >
+              <Post
+                hidedel={false}
+                handleLike={handleLike}
+                redir={true}
+                isLiked={e.isLiked}
+                likes={e.likes}
+                id={e.id}
+                title={e.title}
+                visibility={e.visiblity}
+                author={{
+                  name: e.author.name ? e.author.name : "Unknown",
+                  image: e.author.pic,
+                  id: e.authorId
+                }}
+                createdAt={e.createdAt}
+                isMedia={e.isMedia}
+                mediaUrl={e.mediaurl}
+                authorId={e.authorId}
+              />
+            </div>
+          ))}
+        </div>
       </InfiniteScroll>
     </div>
   );

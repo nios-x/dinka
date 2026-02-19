@@ -8,11 +8,14 @@ import {
     SheetHeader,
     SheetTitle,
     SheetTrigger,
+    SheetClose
 } from "@/components/ui/sheet";
 import { Settings, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import Link from "next/link";
+import { signOut } from "next-auth/react";
 
 export function SettingsSlider() {
     const { theme, setTheme } = useTheme();
@@ -31,16 +34,16 @@ export function SettingsSlider() {
                     <Settings className="h-6 w-6" />
                 </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+            <SheetContent side="right" className="w-[300px] sm:w-[400px] bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl border-zinc-200/50 dark:border-zinc-800/50">
                 <SheetHeader>
                     <SheetTitle>Settings</SheetTitle>
-                    <SheetDescription>
+                    <SheetDescription className="text-zinc-500 dark:text-zinc-400">
                         Customize your experience on Dinka.
                     </SheetDescription>
                 </SheetHeader>
-                <div className="py-6 space-y-6">
-                    <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
+                <div className="py-0 space-y-6">
+                    <div className="flex items-center justify-between pr-10">
+                        <div className="space-y-0.5 px-7">
                             <Label>Dark Mode</Label>
                             <p className="text-xs text-zinc-500 dark:text-zinc-400">
                                 Switch between light and dark themes.
@@ -60,12 +63,26 @@ export function SettingsSlider() {
                         </Button>
                     </div>
 
-                    <div className="space-y-4">
+                    <div className="space-y-4 p-6">
                         <Label>Account</Label>
                         <div className="space-y-2">
-                            <Button variant="ghost" className="w-full justify-start text-sm">Profile Settings</Button>
-                            <Button variant="ghost" className="w-full justify-start text-sm">Privacy</Button>
-                            <Button variant="ghost" className="w-full justify-start text-sm text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950">Logout</Button>
+                            <SheetClose asChild>
+                                <Link href="/settings">
+                                    <Button variant="ghost" className="w-full justify-start text-sm">Profile Settings</Button>
+                                </Link>
+                            </SheetClose>
+                            <SheetClose asChild>
+                                <Link href="/settings">
+                                    <Button variant="ghost" className="w-full justify-start text-sm">Privacy</Button>
+                                </Link>
+                            </SheetClose>
+                            <Button
+                                variant="ghost"
+                                className="w-full justify-start text-sm text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                                onClick={() => signOut()}
+                            >
+                                Logout
+                            </Button>
                         </div>
                     </div>
                 </div>

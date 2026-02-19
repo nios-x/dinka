@@ -149,7 +149,7 @@ export default function Page() {
   const { user, followersCount, followingCount } = data || {};
 
   return (
-    <div className="w-full max-w-md mx-auto px-4 py-10 bg-white dark:bg-zinc-950 transition-colors duration-300">
+    <div className="w-full max-w-md mx-auto px-4 py-10 transition-colors duration-300">
       <div className="flex flex-col items-center">
         <div className="relative h-24 w-24 rounded-full overflow-hidden bg-zinc-200 dark:bg-zinc-700">
           {user?.image && (
@@ -217,7 +217,7 @@ export default function Page() {
         </div>
       </div>
 
-      <div className="p-4 sticky top-[77px] z-10 bg-zinc-100 dark:bg-zinc-900 my-2 rounded-b-xl font-bold text-zinc-600 dark:text-zinc-300 text-xl">
+      <div className="p-4 sticky top-[77px] z-10 bg-white/60 dark:bg-zinc-900/40 backdrop-blur-md border border-zinc-100 dark:border-zinc-800/50 my-2 rounded-b-xl font-bold text-zinc-600 dark:text-zinc-300 text-xl">
         <div>Recent Posts</div>
       </div>
 

@@ -22,23 +22,23 @@ export default function Page() {
   // If authenticated, show the main feed
   if (status === "authenticated" && session) {
     return (
-      <div className="min-h-[89vh] flex flex-col justify-between dark:bg-[#121212]">
-        <div className="flex w-full gap-2 overflow-y-scroll px-2 m-2 " style={{scrollbarWidth:"none"}}>
-                <div className="flex flex-col items-center relative">
-              <div className="h-25 w-25 bg-[linear-gradient(80deg,red,purple,cyan)] rounded-full flex justify-center items-center rotate-[-235deg] " >
-                <div className="w-[93%]  h-[93%] p-[3px] bg-white dark:bg-[#121212] rounded-full overflow-hidden">
-                  <img
-                    src="https://imgs.search.brave.com/Fk3Ch4f8hsuvYO9cNEZHJYZAmZT1JRsuFQb-Ub2nQfU/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/bW9ja29mdW4uY29t/L3dwLWNvbnRlbnQv/dXBsb2Fkcy8yMDI1/LzAyL2Rpc2NvcmQt/cGZwLTEzMjc2Mi5q/cGc"
-                    className="w-full h-full object-cover rotate-[235deg] rounded-full"
-                    alt={"Your story"}
-                  />
-                </div>
+      <div className="min-h-[89vh] flex flex-col justify-between">
+        <div className="flex w-full gap-2 overflow-y-scroll px-2 m-2" style={{ scrollbarWidth: "none" }}>
+          <div className="flex flex-col items-center relative ">
+            <div className="h-25 w-25 bg-[linear-gradient(80deg,red,purple,cyan)] rounded-full flex justify-center items-center rotate-[-235deg] " >
+              <div className="w-[93%]  h-[93%] p-[3px] bg-white dark:bg-[#121212] rounded-full overflow-hidden">
+                <img
+                  src="https://imgs.search.brave.com/Fk3Ch4f8hsuvYO9cNEZHJYZAmZT1JRsuFQb-Ub2nQfU/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/bW9ja29mdW4uY29t/L3dwLWNvbnRlbnQv/dXBsb2Fkcy8yMDI1/LzAyL2Rpc2NvcmQt/cGZwLTEzMjc2Mi5q/cGc"
+                  className="w-full h-full object-cover rotate-[235deg] rounded-full"
+                  alt={"Your story"}
+                />
               </div>
-                  
-              <div className="pt-1 text-xs dark:text-zinc-100 text-zinc-900 font-bold text-center">{"Your story"}</div>
             </div>
-          
-          {[ "Ranveer", "Ramen", "Goose", "Zoro"].map((name, i) => (
+
+            <div className="pt-1 text-xs dark:text-zinc-100 text-zinc-900 font-bold text-center">{"Your story"}</div>
+          </div>
+
+          {["Ranveer", "Ramen", "Goose", "Zoro"].map((name, i) => (
             <div key={i} className="flex flex-col items-center">
               <div className="h-25 w-25 bg-[linear-gradient(80deg,red,purple,cyan)] rounded-full flex justify-center items-center rotate-[-235deg] " >
                 <div className="w-[93%] h-[93%] p-[3px] bg-white dark:bg-[#121212] rounded-full overflow-hidden">
@@ -56,20 +56,21 @@ export default function Page() {
 
         {postContext.isLoading ? (
           <div>
-          
-            
-          <div className="flex items-center justify-center flex-grow">
-            <div className="flex items-center space-x-4">
-              <Skeleton className="h-12 w-12 rounded-full" />
-              <div className="space-y-2">
-                <Skeleton className="h-4 w-[250px]" />
-                <Skeleton className="h-4 w-[200px]" />
+
+
+            <div className="flex items-center justify-center flex-grow">
+              <div className="flex items-center space-x-4">
+                <Skeleton className="h-12 w-12 rounded-full" />
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-[250px]" />
+                  <Skeleton className="h-4 w-[200px]" />
+                </div>
               </div>
             </div>
           </div>
-          </div>
         ) : (
-          <div className="flex-grow overflow-y-auto ">
+          <div className="flex-grow overflow-y-auto p-2 ">
+            <div className=""></div>
             <Posts posts={postContext.posts} handleLike={postContext.handleLike} fetchPost={postContext.fetchPost} />
           </div>
         )}
@@ -94,7 +95,7 @@ export default function Page() {
 
   // If not authenticated, show landing page
   return (
-    <div className="min-h-[89vh] bg-gradient-to-br from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-800">
+    <div className="min-h-[89vh]">
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
