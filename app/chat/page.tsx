@@ -27,6 +27,7 @@ export default function ChatPage() {
   const [selectedMessage, setSelectedMessage] = useState<any>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { socketMessages, send_message, setSocketMessages } = useSocket();
 
@@ -39,10 +40,15 @@ export default function ChatPage() {
       try {
         const res = await fetch(`/api/v1/chats/getall?id=${toId}`);
         const body = await res.json();
-        setSocketMessages((prev: any) => ({
-          ...prev,
-          [toId]: body.reverse()
-        }));
+        
+        if (res.ok && Array.isArray(body)) {
+          setSocketMessages((prev: any) => ({
+            ...prev,
+            [toId]: body.reverse()
+          }));
+        } else {
+          console.error("Failed to fetch chats:", body.error || "Unknown error");
+        }
       } catch (err) {
         console.error("Failed to fetch chats:", err);
       } finally {
@@ -53,10 +59,9 @@ export default function ChatPage() {
 
   // 🔹 Auto-scroll to latest
   useEffect(() => {
-    if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop =
-        chatContainerRef.current.scrollHeight;
-    }
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 100);
   }, [currentMessages]);
 
   // 🔹 Send message
@@ -147,6 +152,7 @@ export default function ChatPage() {
             );
           })
         )}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* 📝 Input bar */}

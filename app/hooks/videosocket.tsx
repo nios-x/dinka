@@ -1,11 +1,14 @@
 "use client"
 import React, { useState, useEffect, useRef, useContext, createContext } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { json } from "zod";
+import { toast } from "sonner";
 
 const SocketContext = createContext<any>(null)
 
 export function SocketProvider({ children }: any) {
+  const router = useRouter();
   const [videoStream, setVideoStream] = useState<MediaStream | null>(null);
   const [remoteUser, setRemoteUser] = useState<string | null>(null);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
@@ -21,7 +24,7 @@ export function SocketProvider({ children }: any) {
   const send_message = (targetUserID: string, content: string, fromUserID: string) => {
     socket?.send(JSON.stringify({
       targetUserID: targetUserID,
-      fromUserID,
+      userID: fromUserID,
       content,
       type: "foreward_message"
     }))
@@ -105,17 +108,52 @@ export function SocketProvider({ children }: any) {
       ws.onmessage = async (event) => {
         const message = JSON.parse(event.data);
         if (message.type === "forewarded_message") {
-          // ✅ Security Fix: Filter messages not intended for this user
-          if (message.targetUserID !== session?.user?.id) {
-            console.warn("Received message for another user, ignoring.");
+          const otherUserId = message.fromUserId;
+          
+          if (!otherUserId) {
+            console.warn("Received message without fromUserId, ignoring.");
             return;
           }
 
-          const otherUserId = message.fromUserID;
+          const newChatMessage = {
+            id: Date.now().toString(),
+            message: message.message,
+            fromId: otherUserId,
+            toId: session?.user?.id
+          };
+
           setSocketMessages((prev: any) => ({
             ...prev,
-            [otherUserId]: [...(prev[otherUserId] || []), message]
+            [otherUserId]: [...(prev[otherUserId] || []), newChatMessage]
           }));
+
+          const urlParams = new URLSearchParams(window.location.search);
+          const currentChatId = urlParams.get("id");
+          if (window.location.pathname !== "/chat" || currentChatId !== otherUserId) {
+            fetch("/api/v1/getuserdetails", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ id: otherUserId }),
+            })
+              .then(res => res.json())
+              .then(data => {
+                const name = data?.user?.name || otherUserId;
+                toast(`${name}: ${message.message}`, {
+                  action: {
+                    label: "Open",
+                    onClick: () => router.push(`/chat?id=${otherUserId}`)
+                  }
+                });
+              })
+              .catch(() => {
+                toast(`${otherUserId}: ${message.message}`, {
+                  action: {
+                    label: "Open",
+                    onClick: () => router.push(`/chat?id=${otherUserId}`)
+                  }
+                });
+              });
+          }
         }
         else if (message.type === "incoming_call") {
           setRemoteUser(message.fromUserID);
