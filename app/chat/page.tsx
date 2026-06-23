@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSocket } from "../hooks/videosocket";
 import { useSession } from "next-auth/react";
-import { Send } from "lucide-react";
+import { Send, Paperclip, X } from "lucide-react";
 import useLongPress from "../hooks/useLongPress";
 import {
   AlertDialog,
@@ -23,6 +23,8 @@ export default function ChatPage() {
   const toId = searchParams?.get("id");
   const { data: session }: any = useSession();
   const [message, setMessage] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(true);
   const [selectedMessage, setSelectedMessage] = useState<any>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -44,7 +46,7 @@ export default function ChatPage() {
         if (res.ok && Array.isArray(body)) {
           setSocketMessages((prev: any) => ({
             ...prev,
-            [toId]: body.reverse()
+            [toId]: body
           }));
         } else {
           console.error("Failed to fetch chats:", body.error || "Unknown error");
@@ -66,18 +68,38 @@ export default function ChatPage() {
 
   // 🔹 Send message
   const handleSend = async () => {
-    if (!message.trim() || !toId) return;
+    if ((!message.trim() && !file) || !toId) return;
+    
     try {
-      const res = await fetch("/api/v1/chats/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ toId, message }),
-      });
-
-      send_message(toId, message, session?.user?.id);
+      let res;
+      if (file) {
+        const formData = new FormData();
+        formData.append("toId", toId);
+        formData.append("message", message);
+        formData.append("file", file);
+        
+        res = await fetch("/api/v1/chats/create", {
+          method: "POST",
+          body: formData,
+        });
+      } else {
+        res = await fetch("/api/v1/chats/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ toId, message }),
+        });
+      }
 
       if (res.ok) {
         const newChat = await res.json();
+        
+        const socketPayload = JSON.stringify({
+          text: message,
+          mediaUrl: newChat.message.mediaUrl
+        });
+        
+        send_message(toId, socketPayload, session?.user?.id);
+
         setSocketMessages((prev: any) => ({
           ...prev,
           [toId]: [...(prev[toId] || []), newChat.message]
@@ -87,6 +109,7 @@ export default function ChatPage() {
       console.error("Error sending message:", err);
     } finally {
       setMessage("");
+      setFile(null);
     }
   };
 
@@ -156,21 +179,48 @@ export default function ChatPage() {
       </div>
 
       {/* 📝 Input bar */}
-      <div className="fixed bottom-0 left-0 right-0 px-3 py-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-t border-gray-200 dark:border-gray-800 flex items-center gap-2 shadow-lg z-20">
-        <input
-          type="text"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSend()}
-          placeholder="Type a message..."
-          className="flex-1 px-4 py-2.5 text-sm sm:text-base rounded-xl border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-600 outline-none bg-gray-50 dark:bg-gray-800 dark:text-gray-100 transition-all"
-        />
-        <button
-          onClick={handleSend}
-          className="p-2 sm:p-3 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 text-white rounded-xl shadow-md hover:shadow-lg hover:scale-105 transition-all flex items-center justify-center"
-        >
-          <Send size={18} />
-        </button>
+      <div className="fixed bottom-0 left-0 right-0 px-3 py-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-t border-gray-200 dark:border-gray-800 flex flex-col shadow-lg z-20">
+        {file && (
+          <div className="flex items-center gap-2 mb-2 p-2 bg-gray-100 dark:bg-gray-800 rounded-lg max-w-xs relative">
+            <span className="text-sm truncate flex-1">{file.name}</span>
+            <button onClick={() => setFile(null)} className="text-gray-500 hover:text-red-500">
+              <X size={16} />
+            </button>
+          </div>
+        )}
+        <div className="flex items-center gap-2">
+          <input
+            type="file"
+            accept="image/*,video/*"
+            hidden
+            ref={fileInputRef}
+            onChange={(e) => {
+              if (e.target.files && e.target.files[0]) {
+                setFile(e.target.files[0]);
+              }
+            }}
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="p-2 sm:p-3 bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl shadow-md hover:bg-gray-300 dark:hover:bg-gray-700 transition-all flex items-center justify-center"
+          >
+            <Paperclip size={18} />
+          </button>
+          <input
+            type="text"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSend()}
+            placeholder="Type a message..."
+            className="flex-1 px-4 py-2.5 text-sm sm:text-base rounded-xl border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-600 outline-none bg-gray-50 dark:bg-gray-800 dark:text-gray-100 transition-all"
+          />
+          <button
+            onClick={handleSend}
+            className="p-2 sm:p-3 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 text-white rounded-xl shadow-md hover:shadow-lg hover:scale-105 transition-all flex items-center justify-center"
+          >
+            <Send size={18} />
+          </button>
+        </div>
       </div>
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
@@ -199,6 +249,8 @@ function ChatMessage({ chat, isMe, onLongPress }: any) {
     delay: 500
   });
 
+  const isVideo = chat.mediaUrl && chat.mediaUrl.includes("/video/");
+
   return (
     <div
       className={`flex w-full ${isMe ? "justify-end" : "justify-start"}`}
@@ -211,7 +263,16 @@ function ChatMessage({ chat, isMe, onLongPress }: any) {
             : "bg-gradient-to-br from-gray-200 to-gray-100 dark:from-gray-700 dark:to-gray-800 dark:text-gray-100 rounded-tl-none"
           }`}
       >
-        {chat.message || <i>📎 {chat.mediaUrl}</i>}
+        {chat.mediaUrl && (
+          <div className="mb-2">
+            {isVideo ? (
+              <video src={chat.mediaUrl} controls className="max-w-full rounded-lg max-h-64 object-cover" />
+            ) : (
+              <img src={chat.mediaUrl} alt="attachment" className="max-w-full rounded-lg max-h-64 object-cover" />
+            )}
+          </div>
+        )}
+        {chat.message && <div>{chat.message}</div>}
       </div>
     </div>
   );

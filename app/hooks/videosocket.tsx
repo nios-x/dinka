@@ -115,9 +115,25 @@ export function SocketProvider({ children }: any) {
             return;
           }
 
+          let parsedMessageText = message.message;
+          let parsedMediaUrl = null;
+          
+          try {
+            const parsedObj = JSON.parse(message.message);
+            if (typeof parsedObj === "object" && parsedObj !== null) {
+              if (parsedObj.text !== undefined || parsedObj.mediaUrl !== undefined) {
+                parsedMessageText = parsedObj.text;
+                parsedMediaUrl = parsedObj.mediaUrl;
+              }
+            }
+          } catch (e) {
+            // It's just a normal text message, not JSON
+          }
+
           const newChatMessage = {
             id: Date.now().toString(),
-            message: message.message,
+            message: parsedMessageText,
+            mediaUrl: parsedMediaUrl,
             fromId: otherUserId,
             toId: session?.user?.id
           };
@@ -138,7 +154,8 @@ export function SocketProvider({ children }: any) {
               .then(res => res.json())
               .then(data => {
                 const name = data?.user?.name || otherUserId;
-                toast(`${name}: ${message.message}`, {
+                const toastMsg = parsedMessageText || (parsedMediaUrl ? "📎 Sent an attachment" : "");
+                toast(`${name}: ${toastMsg}`, {
                   action: {
                     label: "Open",
                     onClick: () => router.push(`/chat?id=${otherUserId}`)
@@ -146,7 +163,8 @@ export function SocketProvider({ children }: any) {
                 });
               })
               .catch(() => {
-                toast(`${otherUserId}: ${message.message}`, {
+                const toastMsg = parsedMessageText || (parsedMediaUrl ? "📎 Sent an attachment" : "");
+                toast(`${otherUserId}: ${toastMsg}`, {
                   action: {
                     label: "Open",
                     onClick: () => router.push(`/chat?id=${otherUserId}`)

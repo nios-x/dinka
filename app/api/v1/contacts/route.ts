@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
         { toId: userId },
       ],
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: { id: "desc" },
     include: {
       from: {
         select: {

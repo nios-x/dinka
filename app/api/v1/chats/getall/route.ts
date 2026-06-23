@@ -22,11 +22,11 @@ export async function GET(req: NextRequest) {
     const chats = await prisma.chats.findMany({
       where: {
         OR: [
-          { fromId, toId },
-          { fromId: toId, toId: fromId },
+          { fromId, toId, isDeletedByFrom: false },
+          { fromId: toId, toId: fromId, isDeletedByTo: false },
         ],
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { id: "asc" },
     });
 
     return NextResponse.json(chats);
