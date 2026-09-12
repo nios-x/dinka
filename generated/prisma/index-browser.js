@@ -137,7 +137,13 @@ exports.Prisma.UserScalarFieldEnum = {
   phone: 'phone',
   pic: 'pic',
   lastSeenAt: 'lastSeenAt',
-  provider: 'provider'
+  provider: 'provider',
+  coverUrl: 'coverUrl',
+  location: 'location',
+  website: 'website',
+  pronouns: 'pronouns',
+  isVerified: 'isVerified',
+  accent: 'accent'
 };
 
 exports.Prisma.OTPTableScalarFieldEnum = {
@@ -154,7 +160,16 @@ exports.Prisma.PostScalarFieldEnum = {
   authorId: 'authorId',
   isMedia: 'isMedia',
   mediaurl: 'mediaurl',
-  createdAt: 'createdAt'
+  createdAt: 'createdAt',
+  kind: 'kind',
+  mediaType: 'mediaType',
+  mediaWidth: 'mediaWidth',
+  mediaHeight: 'mediaHeight',
+  location: 'location',
+  viewCount: 'viewCount',
+  shareCount: 'shareCount',
+  isSynthetic: 'isSynthetic',
+  repostOfId: 'repostOfId'
 };
 
 exports.Prisma.CommentScalarFieldEnum = {
@@ -162,6 +177,101 @@ exports.Prisma.CommentScalarFieldEnum = {
   userId: 'userId',
   postId: 'postId',
   content: 'content',
+  createdAt: 'createdAt',
+  parentId: 'parentId'
+};
+
+exports.Prisma.CommentLikeScalarFieldEnum = {
+  id: 'id',
+  commentId: 'commentId',
+  userId: 'userId',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.ReactionScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  postId: 'postId',
+  type: 'type',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.BookmarkScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  postId: 'postId',
+  collectionId: 'collectionId',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.CollectionScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  name: 'name',
+  coverUrl: 'coverUrl',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.PollScalarFieldEnum = {
+  id: 'id',
+  postId: 'postId',
+  question: 'question',
+  endsAt: 'endsAt',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.PollOptionScalarFieldEnum = {
+  id: 'id',
+  pollId: 'pollId',
+  label: 'label',
+  order: 'order'
+};
+
+exports.Prisma.PollVoteScalarFieldEnum = {
+  id: 'id',
+  optionId: 'optionId',
+  pollId: 'pollId',
+  userId: 'userId',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.HashtagScalarFieldEnum = {
+  id: 'id',
+  tag: 'tag',
+  useCount: 'useCount',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.PostHashtagScalarFieldEnum = {
+  id: 'id',
+  postId: 'postId',
+  hashtagId: 'hashtagId'
+};
+
+exports.Prisma.StoryScalarFieldEnum = {
+  id: 'id',
+  authorId: 'authorId',
+  kind: 'kind',
+  mediaUrl: 'mediaUrl',
+  caption: 'caption',
+  bgFrom: 'bgFrom',
+  bgTo: 'bgTo',
+  createdAt: 'createdAt',
+  expiresAt: 'expiresAt'
+};
+
+exports.Prisma.StoryViewScalarFieldEnum = {
+  id: 'id',
+  storyId: 'storyId',
+  userId: 'userId',
+  seenAt: 'seenAt'
+};
+
+exports.Prisma.StoryReplyScalarFieldEnum = {
+  id: 'id',
+  storyId: 'storyId',
+  userId: 'userId',
+  message: 'message',
   createdAt: 'createdAt'
 };
 
@@ -177,6 +287,10 @@ exports.Prisma.NotificationScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
   postid: 'postid',
+  actorId: 'actorId',
+  commentId: 'commentId',
+  type: 'type',
+  message: 'message',
   isRead: 'isRead',
   createdAt: 'createdAt'
 };
@@ -225,9 +339,45 @@ exports.Viewers = exports.$Enums.Viewers = {
   Followers: 'Followers'
 };
 
+exports.PostKind = exports.$Enums.PostKind = {
+  Text: 'Text',
+  Image: 'Image',
+  Video: 'Video',
+  Reel: 'Reel',
+  Poll: 'Poll',
+  Repost: 'Repost'
+};
+
+exports.ReactionType = exports.$Enums.ReactionType = {
+  Like: 'Like',
+  Love: 'Love',
+  Laugh: 'Laugh',
+  Wow: 'Wow',
+  Sad: 'Sad',
+  Fire: 'Fire'
+};
+
+exports.StoryKind = exports.$Enums.StoryKind = {
+  Image: 'Image',
+  Video: 'Video',
+  Text: 'Text'
+};
+
 exports.Relationship = exports.$Enums.Relationship = {
   Follower: 'Follower',
   Blocked: 'Blocked'
+};
+
+exports.NotificationType = exports.$Enums.NotificationType = {
+  Like: 'Like',
+  Comment: 'Comment',
+  Reply: 'Reply',
+  Follow: 'Follow',
+  FollowRequest: 'FollowRequest',
+  Mention: 'Mention',
+  Repost: 'Repost',
+  StoryReply: 'StoryReply',
+  System: 'System'
 };
 
 exports.ChatType = exports.$Enums.ChatType = {
@@ -241,6 +391,18 @@ exports.Prisma.ModelName = {
   OTPTable: 'OTPTable',
   Post: 'Post',
   Comment: 'Comment',
+  CommentLike: 'CommentLike',
+  Reaction: 'Reaction',
+  Bookmark: 'Bookmark',
+  Collection: 'Collection',
+  Poll: 'Poll',
+  PollOption: 'PollOption',
+  PollVote: 'PollVote',
+  Hashtag: 'Hashtag',
+  PostHashtag: 'PostHashtag',
+  Story: 'Story',
+  StoryView: 'StoryView',
+  StoryReply: 'StoryReply',
   Relations: 'Relations',
   Notification: 'Notification',
   SeenPost: 'SeenPost',

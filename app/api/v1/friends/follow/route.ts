@@ -1,27 +1,31 @@
 import prisma from "@/lib/prisma";
-import { authOptions } from "@/pages/api/auth/[...nextauth]";
-import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
+import { requireUser, readJson } from "@/lib/auth";
+import { notify } from "@/lib/social";
+
+/** Follows someone. Idempotent, so a double tap does not 500. */
 export async function POST(req: NextRequest) {
-  const data = await req.json();
-  const session: any = await getServerSession(authOptions);
-  if (!session || !session.user?.email || !session.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const id = session.user.id
-    try{
-        const relation = await prisma.relations.create({
-            data:{
-                srcid:id,
-                destid: data.friendId,
-                type: "Follower"
-            }
-        })
-        console.log(relation)
-        return NextResponse.json({
-            success:"true",
-        })
-    }catch(e){
-        return NextResponse.json({
-            error:"Error Occured",
-        })
-    }
+  const { userId, error } = await requireUser();
+  if (error) return error;
+
+  const body = await readJson<{ friendId: string }>(req);
+  const friendId = body?.friendId;
+
+  if (!friendId) return NextResponse.json({ error: "Who do you want to follow?" }, { status: 400 });
+  if (friendId === userId) {
+    return NextResponse.json({ error: "You cannot follow yourself" }, { status: 400 });
+  }
+
+  const target = await prisma.user.findUnique({ where: { id: friendId }, select: { id: true } });
+  if (!target) return NextResponse.json({ error: "That account no longer exists" }, { status: 404 });
+
+  await prisma.relations.upsert({
+    where: { srcid_destid: { srcid: userId, destid: friendId } },
+    create: { srcid: userId, destid: friendId, type: "Follower" },
+    update: { type: "Follower" },
+  });
+
+  await notify({ userId: friendId, actorId: userId, type: "Follow" });
+
+  return NextResponse.json({ success: true });
 }

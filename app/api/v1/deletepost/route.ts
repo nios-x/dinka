@@ -61,9 +61,11 @@ export const POST = async (req: NextRequest) => {
       }
     }
 
-    await prisma.comment.deleteMany({
-      where: { postId: postId }
-    });
+    // Reactions, bookmarks, tags, polls and notifications cascade from the
+    // schema; comments and seen-rows keep their original non-cascading
+    // relations, so they are cleared explicitly.
+    await prisma.comment.deleteMany({ where: { postId: postId } });
+    await prisma.seenPost.deleteMany({ where: { postId: postId } });
 
     await prisma.post.delete({
       where: { id: postId },

@@ -26,18 +26,38 @@ model User {
   pic           String?
   lastSeenAt    DateTime       @default(now())
   provider      Provider
+
+  // profile surface
+  coverUrl   String?
+  location   String?
+  website    String?
+  pronouns   String?
+  isVerified Boolean @default(false)
+  accent     String?
+
   chatsSent     Chats[]        @relation("SentChats")
   chatsReceived Chats[]        @relation("ReceivedChats")
   comments      Comment[]
-  notifications Notification[]
+  notifications Notification[] @relation("NotificationRecipient")
+  actedOn       Notification[] @relation("NotificationActor")
   posts         Post[]
   following     Relations[]    @relation("Following")
   followers     Relations[]    @relation("Followers")
   seenPosts     SeenPost[]
   likedPosts    Post[]         @relation("PostLikes")
 
+  stories      Story[]
+  storyViews   StoryView[]
+  storyReplies StoryReply[]
+  reactions    Reaction[]
+  bookmarks    Bookmark[]
+  collections  Collection[]
+  pollVotes    PollVote[]
+  commentLikes CommentLike[]
+
   @@index([createdAt])
   @@index([lastSeenAt])
+  @@index([username])
 }
 
 model OTPTable {
@@ -50,23 +70,46 @@ model OTPTable {
 }
 
 model Post {
-  id            Int            @id @default(autoincrement())
-  title         String
-  visiblity     Viewers        @default(Public)
-  authorId      String
-  isMedia       Boolean
-  mediaurl      String?
-  createdAt     DateTime       @default(now())
+  id        Int      @id @default(autoincrement())
+  title     String
+  visiblity Viewers  @default(Public)
+  authorId  String
+  isMedia   Boolean
+  mediaurl  String?
+  createdAt DateTime @default(now())
+
+  // richer post surface
+  kind        PostKind @default(Text)
+  mediaType   String?
+  mediaWidth  Int?
+  mediaHeight Int?
+  location    String?
+  viewCount   Int      @default(0)
+  shareCount  Int      @default(0)
+  isSynthetic Boolean  @default(false)
+
+  // quote / repost
+  repostOfId Int?
+  repostOf   Post?  @relation("Reposts", fields: [repostOfId], references: [id], onDelete: Cascade)
+  reposts    Post[] @relation("Reposts")
+
   comments      Comment[]
   notifications Notification[]
   author        User           @relation(fields: [authorId], references: [id])
   seenBy        SeenPost[]
   likes         User[]         @relation("PostLikes")
 
+  reactions Reaction[]
+  bookmarks Bookmark[]
+  hashtags  PostHashtag[]
+  poll      Poll?
+
   @@index([authorId])
   @@index([createdAt])
   @@index([isMedia])
   @@index([visiblity])
+  @@index([kind])
+  @@index([repostOfId])
 }
 
 model Comment {
@@ -78,9 +121,181 @@ model Comment {
   post      Post     @relation(fields: [postId], references: [id])
   user      User     @relation(fields: [userId], references: [id])
 
+  // threaded replies
+  parentId String?
+  parent   Comment?  @relation("CommentThread", fields: [parentId], references: [commentId], onDelete: Cascade)
+  replies  Comment[] @relation("CommentThread")
+
+  likes         CommentLike[]
+  notifications Notification[]
+
   @@index([userId])
   @@index([postId])
   @@index([createdAt])
+  @@index([parentId])
+}
+
+model CommentLike {
+  id        Int      @id @default(autoincrement())
+  commentId String
+  userId    String
+  createdAt DateTime @default(now())
+  comment   Comment  @relation(fields: [commentId], references: [commentId], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId])
+  @@index([commentId])
+  @@index([userId])
+}
+
+model Reaction {
+  id        Int          @id @default(autoincrement())
+  userId    String
+  postId    Int
+  type      ReactionType @default(Like)
+  createdAt DateTime     @default(now())
+  post      Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
+  @@index([type])
+}
+
+model Bookmark {
+  id           Int         @id @default(autoincrement())
+  userId       String
+  postId       Int
+  collectionId Int?
+  createdAt    DateTime    @default(now())
+  post         Post        @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  collection   Collection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+
+  @@unique([postId, userId])
+  @@index([userId])
+  @@index([postId])
+  @@index([collectionId])
+}
+
+model Collection {
+  id        Int        @id @default(autoincrement())
+  userId    String
+  name      String
+  coverUrl  String?
+  createdAt DateTime   @default(now())
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookmarks Bookmark[]
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+model Poll {
+  id        Int          @id @default(autoincrement())
+  postId    Int          @unique
+  question  String?
+  endsAt    DateTime?
+  createdAt DateTime     @default(now())
+  post      Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  options   PollOption[]
+
+  @@index([postId])
+}
+
+model PollOption {
+  id     Int        @id @default(autoincrement())
+  pollId Int
+  label  String
+  order  Int        @default(0)
+  poll   Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  votes  PollVote[]
+
+  @@index([pollId])
+}
+
+model PollVote {
+  id        Int        @id @default(autoincrement())
+  optionId  Int
+  pollId    Int
+  userId    String
+  createdAt DateTime   @default(now())
+  option    PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([pollId, userId])
+  @@index([optionId])
+  @@index([userId])
+}
+
+model Hashtag {
+  id        Int           @id @default(autoincrement())
+  tag       String        @unique
+  useCount  Int           @default(0)
+  createdAt DateTime      @default(now())
+  posts     PostHashtag[]
+
+  @@index([useCount])
+  @@index([tag])
+}
+
+model PostHashtag {
+  id        Int     @id @default(autoincrement())
+  postId    Int
+  hashtagId Int
+  post      Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  hashtag   Hashtag @relation(fields: [hashtagId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, hashtagId])
+  @@index([postId])
+  @@index([hashtagId])
+}
+
+model Story {
+  id        Int       @id @default(autoincrement())
+  authorId  String
+  kind      StoryKind @default(Image)
+  mediaUrl  String?
+  caption   String?
+  bgFrom    String?
+  bgTo      String?
+  createdAt DateTime  @default(now())
+  expiresAt DateTime
+
+  author  User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  views   StoryView[]
+  replies StoryReply[]
+
+  @@index([authorId])
+  @@index([expiresAt])
+  @@index([createdAt])
+}
+
+model StoryView {
+  id      Int      @id @default(autoincrement())
+  storyId Int
+  userId  String
+  seenAt  DateTime @default(now())
+  story   Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([storyId, userId])
+  @@index([storyId])
+  @@index([userId])
+}
+
+model StoryReply {
+  id        Int      @id @default(autoincrement())
+  storyId   Int
+  userId    String
+  message   String
+  createdAt DateTime @default(now())
+  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([storyId])
+  @@index([userId])
 }
 
 model Relations {
@@ -100,18 +315,27 @@ model Relations {
 }
 
 model Notification {
-  id        Int      @id @default(autoincrement())
+  id        Int              @id @default(autoincrement())
   userId    String
-  postid    Int
-  isRead    Boolean  @default(false)
-  createdAt DateTime @default(now())
-  post      Post     @relation(fields: [postid], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
+  postid    Int?
+  actorId   String?
+  commentId String?
+  type      NotificationType @default(Like)
+  message   String?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  post    Post?    @relation(fields: [postid], references: [id], onDelete: Cascade)
+  user    User     @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  actor   User?    @relation("NotificationActor", fields: [actorId], references: [id], onDelete: Cascade)
+  comment Comment? @relation(fields: [commentId], references: [commentId], onDelete: Cascade)
 
   @@index([userId])
   @@index([postid])
   @@index([isRead])
   @@index([createdAt])
+  @@index([actorId])
+  @@index([type])
 }
 
 model SeenPost {
@@ -129,7 +353,7 @@ model SeenPost {
 }
 
 model Chats {
-  id              Int   @id @default(autoincrement())
+  id              Int      @id @default(autoincrement())
   fromId          String
   toId            String
   type            ChatType
@@ -149,12 +373,12 @@ model Chats {
   @@index([createdAt])
 }
 
-
 enum ChatType {
   Message
   Call
   VideoCall
 }
+
 enum Viewers {
   Public
   Followers
@@ -168,4 +392,40 @@ enum Relationship {
 enum Provider {
   Google
   Email
+}
+
+enum PostKind {
+  Text
+  Image
+  Video
+  Reel
+  Poll
+  Repost
+}
+
+enum StoryKind {
+  Image
+  Video
+  Text
+}
+
+enum ReactionType {
+  Like
+  Love
+  Laugh
+  Wow
+  Sad
+  Fire
+}
+
+enum NotificationType {
+  Like
+  Comment
+  Reply
+  Follow
+  FollowRequest
+  Mention
+  Repost
+  StoryReply
+  System
 }
