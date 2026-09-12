@@ -191,6 +191,9 @@ export default function Comments({
   const startReply = (node: CommentNode) => {
     setReplyTo(node);
     setDraft(`@${handleOf(node.user)} `);
+    // The composer sits at the head of the thread, which can be off-screen by
+    // the time you reach a reply button, so bring it back before focusing it.
+    inputRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
     inputRef.current?.focus();
   };
 
@@ -201,6 +204,61 @@ export default function Comments({
       <h2 className="px-4 pb-2 pt-4 text-[0.95rem] font-semibold text-ink">
         {total > 0 ? `${compact(total)} ${total === 1 ? "comment" : "comments"}` : "Comments"}
       </h2>
+
+      {/* Composer — parked at the head of the thread.
+
+          It used to stick to the bottom of the viewport, which meant it rode up
+          over the comments as a floating pill at whatever offset cleared the
+          dock. The dock already owns that edge on a phone; two floating things
+          fighting for it is what made the field look unmoored. Sitting under
+          the heading it is on screen the moment the post opens, and it stays
+          where it was put. */}
+      <form
+        onSubmit={send}
+        className="border-y border-line bg-tile-sunk/40 px-3 py-2.5 sm:px-4"
+      >
+        {replyTo && (
+          <div className="mb-2 flex items-center justify-between gap-2 rounded-full bg-tile-sunk px-3 py-1.5">
+            <p className="min-w-0 truncate text-[0.78rem] text-ink-2">
+              Replying to <span className="font-semibold">{replyTo.user.name ?? "them"}</span>
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setReplyTo(null);
+                setDraft("");
+              }}
+              className="shrink-0 text-[0.75rem] font-semibold text-ember"
+            >
+              Cancel
+            </button>
+          </div>
+        )}
+
+        <div className="flex items-center gap-2">
+          <Avatar src={me?.image} name={me?.name} userId={me?.id} size="sm" />
+          <input
+            ref={inputRef}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder={replyTo ? "Write a reply…" : "Add a comment…"}
+            maxLength={1000}
+            aria-label={replyTo ? "Your reply" : "Your comment"}
+            className="h-10 flex-1 rounded-full border border-line bg-tile px-4 text-[0.9rem] text-ink outline-none transition-colors focus:border-glaze"
+          />
+          <button
+            type="submit"
+            disabled={!draft.trim() || sending}
+            aria-label="Post comment"
+            className={cn(
+              "press grid h-10 w-10 shrink-0 place-items-center rounded-full transition-colors",
+              draft.trim() ? "bg-glaze text-glaze-on" : "bg-tile-sunk text-ink-4"
+            )}
+          >
+            {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+          </button>
+        </div>
+      </form>
 
       {loading ? (
         <div className="space-y-4 px-4 py-2">
@@ -272,59 +330,6 @@ export default function Comments({
           </AnimatePresence>
         </ul>
       )}
-
-      {/* Composer — always reachable.
-
-          On a phone the dock floats over the bottom of the viewport, so this
-          parks above it rather than underneath: sticking at bottom-0 here put
-          the comment field behind the dock's pill. On desktop there is no dock
-          and it sits on the bottom edge. */}
-      <form
-        onSubmit={send}
-        className="safe-b sticky bottom-[5.25rem] z-20 mt-3 rounded-[var(--r-sheet)] border border-line bg-tile/90 px-3 py-2.5 backdrop-blur-xl lg:bottom-0 lg:rounded-none lg:border-x-0 lg:border-b-0"
-      >
-        {replyTo && (
-          <div className="mb-2 flex items-center justify-between gap-2 rounded-full bg-tile-sunk px-3 py-1.5">
-            <p className="min-w-0 truncate text-[0.78rem] text-ink-2">
-              Replying to <span className="font-semibold">{replyTo.user.name ?? "them"}</span>
-            </p>
-            <button
-              type="button"
-              onClick={() => {
-                setReplyTo(null);
-                setDraft("");
-              }}
-              className="shrink-0 text-[0.75rem] font-semibold text-ember"
-            >
-              Cancel
-            </button>
-          </div>
-        )}
-
-        <div className="flex items-center gap-2">
-          <Avatar src={me?.image} name={me?.name} userId={me?.id} size="sm" />
-          <input
-            ref={inputRef}
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            placeholder={replyTo ? "Write a reply…" : "Add a comment…"}
-            maxLength={1000}
-            aria-label={replyTo ? "Your reply" : "Your comment"}
-            className="h-10 flex-1 rounded-full border border-line bg-tile px-4 text-[0.9rem] text-ink outline-none transition-colors focus:border-glaze"
-          />
-          <button
-            type="submit"
-            disabled={!draft.trim() || sending}
-            aria-label="Post comment"
-            className={cn(
-              "press grid h-10 w-10 shrink-0 place-items-center rounded-full transition-colors",
-              draft.trim() ? "bg-glaze text-glaze-on" : "bg-tile-sunk text-ink-4"
-            )}
-          >
-            {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-          </button>
-        </div>
-      </form>
 
       <AlertDialog open={!!pendingDelete} onOpenChange={(o) => !o && setPendingDelete(null)}>
         <AlertDialogContent>

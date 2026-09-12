@@ -41,6 +41,12 @@
   --glass-edge: rgb(255 253 248 / 0.55);
   --glass-sheen: rgb(255 253 248 / 0.6);
 
+  /* Chrome blurs harder than a panel does: a bar is a few rem tall and whatever
+     scrolls under it has to dissolve within that band, not merely soften. The
+     lift keeps the wash from going muddy once the blur has averaged it. */
+  --chrome-blur: 34px;
+  --chrome-lift: 1.04;
+
   /* ── Ink: near-black with a warm cast ── */
   --ink: #17130f;
   --ink-2: #55504a;
@@ -133,6 +139,11 @@
   --glass-blur: 24px;
   --glass-edge: rgb(255 255 255 / 0.08);
   --glass-sheen: rgb(255 255 255 / 0.06);
+
+  /* Dark chrome sinks its backdrop instead of lifting it: brightening a dark
+     wash greys it out and the bar loses its separation from the page. */
+  --chrome-blur: 34px;
+  --chrome-lift: 0.86;
 
   --ink: #f4f3f1;
   --ink-2: #b6b2ad;
@@ -444,18 +455,28 @@
      light enough that the blur actually reads: past roughly 70% the fill is
      effectively paint, and the backdrop-filter behind it costs a compositor
      pass for something nobody can see. Text stays legible because the blur
-     flattens whatever slides underneath into an even wash. */
+     flattens whatever slides underneath into an even wash.
+
+     The lit inner edge is not decoration. A blurred pane with no edge reads as
+     a translucent rectangle — the same note the .glass recipe carries — and
+     these bars are the surfaces where that matters most, because they are the
+     only ones with live page content sliding behind them. */
+  .frost,
+  .glass-bar,
+  .frost-tile {
+    backdrop-filter: blur(var(--chrome-blur)) saturate(1.9) brightness(var(--chrome-lift));
+    -webkit-backdrop-filter: blur(var(--chrome-blur)) saturate(1.9)
+      brightness(var(--chrome-lift));
+  }
+
   .frost,
   .glass-bar {
-    background-color: color-mix(in oklab, var(--ground) 58%, transparent);
-    backdrop-filter: blur(28px) saturate(1.8);
-    -webkit-backdrop-filter: blur(28px) saturate(1.8);
+    background-color: color-mix(in oklab, var(--ground) 52%, transparent);
+    box-shadow: inset 0 1px 0 0 var(--glass-sheen);
   }
 
   .frost-tile {
-    background-color: color-mix(in oklab, var(--tile) 64%, transparent);
-    backdrop-filter: blur(28px) saturate(1.8);
-    -webkit-backdrop-filter: blur(28px) saturate(1.8);
+    background-color: color-mix(in oklab, var(--tile) 58%, transparent);
   }
 
   /* Where backdrop-filter is unavailable the surface must still be opaque

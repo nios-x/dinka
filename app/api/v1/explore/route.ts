@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { Prisma } from "@/generated/prisma";
 import prisma from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { blockedIds, postInclude, serializePost } from "@/lib/social";
@@ -8,6 +9,10 @@ import { blockedIds, postInclude, serializePost } from "@/lib/social";
  *
  * Public posts ranked by engagement over the last fortnight, so the grid shows
  * what people responded to rather than simply what was posted most recently.
+ *
+ * Only posts that carry media reach this surface. Explore is a picture grid,
+ * and a text post in it is a cropped paragraph in a square — it reads as a
+ * broken tile rather than as something worth opening.
  */
 export async function GET(req: NextRequest) {
   const { userId, error } = await requireUser();
@@ -21,15 +26,26 @@ export async function GET(req: NextRequest) {
   const blocked = await blockedIds(userId);
   const since = new Date(Date.now() - 14 * 86_400_000);
 
+  const where: Prisma.PostWhereInput = {
+    visiblity: "Public",
+    authorId: { notIn: blocked.length ? blocked : ["__none__"] },
+    isMedia: true,
+    mediaurl: { not: null },
+  };
+
+  if (filter === "fresh") where.createdAt = { gte: since };
+  if (filter === "reels") where.kind = "Reel";
+
+  // Stills: everything that is not a reel and not a video upload. `mediaType`
+  // is null on older posts, and a bare NOT would drop those rows rather than
+  // keep them, so the null case is spelled out.
+  if (filter === "photos") {
+    where.kind = { not: "Reel" };
+    where.OR = [{ mediaType: null }, { NOT: { mediaType: { startsWith: "video" } } }];
+  }
+
   const posts = await prisma.post.findMany({
-    where: {
-      visiblity: "Public",
-      authorId: { notIn: blocked.length ? blocked : ["__none__"] },
-      ...(filter === "media" ? { isMedia: true } : {}),
-      ...(filter === "reels" ? { kind: "Reel" } : {}),
-      ...(filter === "polls" ? { kind: "Poll" } : {}),
-      ...(filter === "fresh" ? { createdAt: { gte: since } } : {}),
-    },
+    where,
     orderBy:
       filter === "fresh"
         ? [{ createdAt: "desc" }]

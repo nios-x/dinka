@@ -10,26 +10,29 @@ import EmptyState from "@/components/ui/empty-state";
 import { openPalette } from "@/components/composer/composer-bus";
 import { compact } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { ExploreIcon, PollIcon } from "@/components/icons";
+import { ExploreIcon } from "@/components/icons";
 import type { FeedPost } from "@/app/Providers/PostsProvider";
 
 /**
  * Explore.
  *
  * A dense grid rather than the feed's cards — this surface is for scanning many
- * posts quickly. Media posts show their image, text posts show their words, so
- * a text-heavy community does not produce a grid of gray rectangles.
+ * posts quickly. Pictures only: a text post cropped into a square is a broken
+ * tile, not something worth opening, so words stay in the feed and this stays
+ * a wall of images.
  */
 
 const FILTERS = [
   { key: "all", label: "Top" },
   { key: "fresh", label: "Fresh" },
-  { key: "media", label: "Photos" },
+  { key: "photos", label: "Photos" },
   { key: "reels", label: "Reels" },
-  { key: "polls", label: "Polls" },
 ] as const;
 
 type Filter = (typeof FILTERS)[number]["key"];
+
+/** The grid renders nothing but media, so anything without it is dropped. */
+const hasMedia = (p: FeedPost) => Boolean(p.isMedia && p.mediaurl);
 
 export default function Page() {
   const [filter, setFilter] = React.useState<Filter>("all");
@@ -51,10 +54,11 @@ export default function Page() {
         return;
       }
       const data = await res.json();
+      const incoming: FeedPost[] = (data.posts ?? []).filter(hasMedia);
       setPosts((prev) => {
-        if (p === 0) return data.posts;
+        if (p === 0) return incoming;
         const seen = new Set(prev.map((x) => x.id));
-        return [...prev, ...data.posts.filter((x: FeedPost) => !seen.has(x.id))];
+        return [...prev, ...incoming.filter((x) => !seen.has(x.id))];
       });
       setHasMore(!!data.hasMore);
       setPage(p + 1);
@@ -87,7 +91,7 @@ export default function Page() {
 
   return (
     <>
-      <PageHeader title="Explore" subtitle="Public posts from across Dinka">
+      <PageHeader title="Explore" subtitle="Photos and reels from across Dinka">
         <button
           type="button"
           onClick={() => openPalette()}
@@ -147,8 +151,8 @@ export default function Page() {
       ) : posts.length === 0 ? (
         <EmptyState
           icon={<ExploreIcon size={26} />}
-          title="Nothing to explore yet"
-          body="Once people start posting publicly, their posts land here."
+          title="No photos to explore yet"
+          body="Once people post pictures and reels publicly, they land here."
           action={{ label: "Back to your feed", href: "/" }}
         />
       ) : (
@@ -190,29 +194,17 @@ function Tile({ post, tall }: { post: FeedPost; tall: boolean }) {
         !tall && "aspect-square"
       )}
     >
-      {post.isMedia && post.mediaurl ? (
-        <>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={post.mediaurl}
-            alt={post.title?.slice(0, 80) || "Post"}
-            loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-          />
-          {isVideo && (
-            <span className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-black/55 text-white backdrop-blur-sm">
-              <Play size={12} fill="currentColor" />
-            </span>
-          )}
-        </>
-      ) : (
-        <div className="flex h-full w-full flex-col justify-between bg-tile p-3">
-          {post.poll && <PollIcon size={16} className="text-glaze dark:text-teal" />}
-          <p className="line-clamp-5 text-[0.82rem] font-medium leading-snug text-ink">
-            {post.title}
-          </p>
-          <p className="meta truncate">{post.author?.name ?? "Someone"}</p>
-        </div>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={post.mediaurl ?? ""}
+        alt={post.title?.slice(0, 80) || "Post"}
+        loading="lazy"
+        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+      />
+      {isVideo && (
+        <span className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-black/55 text-white backdrop-blur-sm">
+          <Play size={12} fill="currentColor" />
+        </span>
       )}
 
       <span className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center gap-2 bg-gradient-to-t from-black/65 to-transparent p-2 pt-6 opacity-0 transition-opacity group-hover:opacity-100">

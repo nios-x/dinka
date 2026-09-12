@@ -184,100 +184,106 @@ function Thread() {
 
   return (
     <div className="flex h-svh flex-col lg:h-[100svh]">
-      <header className="frost flex shrink-0 items-center gap-2.5 border-b border-line px-2 py-2.5">
-        <button
-          type="button"
-          onClick={() => router.push("/chats")}
-          aria-label="Back to messages"
-          className="press grid h-9 w-9 shrink-0 place-items-center rounded-full text-ink-2 transition-colors hover:bg-tile-sunk"
-        >
-          <ArrowLeft size={20} />
-        </button>
+      {/* The thread scrolls underneath its own header rather than beside it.
+          A frosted bar with nothing passing behind it has nothing to blur, so
+          it reads as a plain translucent rectangle; sticking it inside the
+          scroller is what turns it back into glass. */}
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+        <header className="frost sticky top-0 z-20 flex shrink-0 items-center gap-2.5 border-b border-line px-2 py-2.5">
+          <button
+            type="button"
+            onClick={() => router.push("/chats")}
+            aria-label="Back to messages"
+            className="press grid h-9 w-9 shrink-0 place-items-center rounded-full text-ink-2 transition-colors hover:bg-tile-sunk"
+          >
+            <ArrowLeft size={20} />
+          </button>
 
-        <Link href={`/profile?id=${toId}`} className="flex min-w-0 flex-1 items-center gap-2.5">
-          <Avatar
-            src={partner?.pic ?? partner?.image}
-            name={partner?.name}
-            userId={toId}
-            size="md"
-            online={isOnline(partner?.lastSeenAt)}
-          />
-          <span className="min-w-0 leading-tight">
-            <span className="flex items-center gap-1">
-              <span className="truncate text-[0.95rem] font-semibold text-ink">
-                {partner?.name ?? "Someone"}
+          <Link href={`/profile?id=${toId}`} className="flex min-w-0 flex-1 items-center gap-2.5">
+            <Avatar
+              src={partner?.pic ?? partner?.image}
+              name={partner?.name}
+              userId={toId}
+              size="md"
+              online={isOnline(partner?.lastSeenAt)}
+            />
+            <span className="min-w-0 leading-tight">
+              <span className="flex items-center gap-1">
+                <span className="truncate text-[0.95rem] font-semibold text-ink">
+                  {partner?.name ?? "Someone"}
+                </span>
+                {partner?.isVerified && (
+                  <BadgeCheck size={14} className="shrink-0 text-glaze dark:text-teal" />
+                )}
               </span>
-              {partner?.isVerified && (
-                <BadgeCheck size={14} className="shrink-0 text-glaze dark:text-teal" />
-              )}
+              <span className="meta block truncate">
+                {partner?.lastSeenAt ? presenceLabel(partner.lastSeenAt) : `@${handleOf(partner)}`}
+              </span>
             </span>
-            <span className="meta block truncate">
-              {partner?.lastSeenAt ? presenceLabel(partner.lastSeenAt) : `@${handleOf(partner)}`}
-            </span>
-          </span>
-        </Link>
+          </Link>
 
-        <button
-          type="button"
-          onClick={() => createCall(toId)}
-          aria-label="Start a voice call"
-          className="press grid h-9 w-9 shrink-0 place-items-center rounded-full text-ink-2 transition-colors hover:bg-tile-sunk"
-        >
-          <Phone size={18} />
-        </button>
-        <button
-          type="button"
-          onClick={() => createCall(toId)}
-          aria-label="Start a video call"
-          className="press grid h-9 w-9 shrink-0 place-items-center rounded-full text-ink-2 transition-colors hover:bg-tile-sunk"
-        >
-          <Video size={18} />
-        </button>
-      </header>
+          <button
+            type="button"
+            onClick={() => createCall(toId)}
+            aria-label="Start a voice call"
+            className="press grid h-9 w-9 shrink-0 place-items-center rounded-full text-ink-2 transition-colors hover:bg-tile-sunk"
+          >
+            <Phone size={18} />
+          </button>
+          <button
+            type="button"
+            onClick={() => createCall(toId)}
+            aria-label="Start a video call"
+            className="press grid h-9 w-9 shrink-0 place-items-center rounded-full text-ink-2 transition-colors hover:bg-tile-sunk"
+          >
+            <Video size={18} />
+          </button>
+        </header>
 
-      <div className="flex-1 overflow-y-auto px-3 py-4">
-        {messages.length === 0 ? (
-          <div className="grid h-full place-items-center px-8 text-center">
-            <div>
-              <Avatar src={partner?.pic} name={partner?.name} userId={toId} size="3xl" />
-              <p className="mt-4 text-[1.05rem] font-semibold text-ink">
-                {partner?.name ?? "Someone"}
-              </p>
-              <p className="mt-1 text-[0.875rem] text-ink-3">
-                This is the start of your conversation. Say hello.
-              </p>
+        <div className="flex flex-1 flex-col px-3 py-4">
+          {messages.length === 0 ? (
+            <div className="grid flex-1 place-items-center px-8 text-center">
+              <div>
+                <Avatar src={partner?.pic} name={partner?.name} userId={toId} size="3xl" />
+                <p className="mt-4 text-[1.05rem] font-semibold text-ink">
+                  {partner?.name ?? "Someone"}
+                </p>
+                <p className="mt-1 text-[0.875rem] text-ink-3">
+                  This is the start of your conversation. Say hello.
+                </p>
+              </div>
             </div>
-          </div>
-        ) : (
-          <ul className="space-y-0.5">
-            {messages.map((chat: any, i: number) => {
-              const isMe = chat.fromId === me;
-              const prev = messages[i - 1];
-              const newDay =
-                !prev || new Date(prev.createdAt).toDateString() !== new Date(chat.createdAt).toDateString();
-              // Group runs from the same sender within five minutes.
-              const grouped =
-                !newDay &&
-                prev?.fromId === chat.fromId &&
-                new Date(chat.createdAt).getTime() - new Date(prev.createdAt).getTime() < 300_000;
+          ) : (
+            <ul className="space-y-0.5">
+              {messages.map((chat: any, i: number) => {
+                const isMe = chat.fromId === me;
+                const prev = messages[i - 1];
+                const newDay =
+                  !prev || new Date(prev.createdAt).toDateString() !== new Date(chat.createdAt).toDateString();
+                // Group runs from the same sender within five minutes.
+                const grouped =
+                  !newDay &&
+                  prev?.fromId === chat.fromId &&
+                  new Date(chat.createdAt).getTime() - new Date(prev.createdAt).getTime() < 300_000;
 
-              return (
-                <li key={chat.id ?? `live-${i}`}>
-                  {newDay && (
-                    <p className="meta py-4 text-center uppercase">{dayLabel(chat.createdAt)}</p>
-                  )}
-                  <Bubble
-                    chat={chat}
-                    isMe={isMe}
-                    grouped={grouped}
-                    onLongPress={() => isMe && setSelected(chat)}
-                  />
-                </li>
-              );
-            })}
-          </ul>
-        )}
-        <div ref={endRef} />
+                return (
+                  <li key={chat.id ?? `live-${i}`}>
+                    {newDay && (
+                      <p className="meta py-4 text-center uppercase">{dayLabel(chat.createdAt)}</p>
+                    )}
+                    <Bubble
+                      chat={chat}
+                      isMe={isMe}
+                      grouped={grouped}
+                      onLongPress={() => isMe && setSelected(chat)}
+                    />
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          <div ref={endRef} />
+        </div>
       </div>
 
       <footer className="safe-b shrink-0 border-t border-line bg-tile px-3 py-2.5">
