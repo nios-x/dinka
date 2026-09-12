@@ -31,7 +31,10 @@ export default function Dock() {
   const right = DOCK_ITEMS.slice(2);
 
   return (
-    <div className="safe-b pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center pb-5 lg:hidden">
+    // The gap under the dock is the home-indicator inset plus a fixed lift, in
+    // one declaration. `safe-b` alongside `pb-5` would have overridden it to
+    // the bare inset — nothing at all on a phone without a notch.
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center pb-[calc(env(safe-area-inset-bottom,0px)+1.75rem)] lg:hidden">
       <nav
         aria-label="Primary"
         className="frost-tile pointer-events-auto flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 shadow-[var(--shadow-lg)]"

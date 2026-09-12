@@ -186,6 +186,10 @@ function Tile({ post, tall }: { post: FeedPost; tall: boolean }) {
   const isVideo =
     (post.mediaType ?? "").startsWith("video") || /\.(mp4|webm|mov)(\?|$)/i.test(post.mediaurl ?? "");
 
+  // The caller filters these out already; this keeps an empty `src` — which
+  // browsers resolve against the page URL — off the grid if one ever slips by.
+  if (!post.mediaurl) return null;
+
   return (
     <Link
       href={`/postid/${post.id}`}
@@ -196,7 +200,7 @@ function Tile({ post, tall }: { post: FeedPost; tall: boolean }) {
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={post.mediaurl ?? ""}
+        src={post.mediaurl}
         alt={post.title?.slice(0, 80) || "Post"}
         loading="lazy"
         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"

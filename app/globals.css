@@ -384,6 +384,14 @@
 }
 
 /* ═══════════════ World primitives ═══════════════ */
+
+/* Never hand-write `-webkit-backdrop-filter` next to `backdrop-filter` here.
+   Lightning CSS treats the pair as one declaration and re-emits it for the
+   build targets — and it resolved that pair to the prefixed form alone, so
+   every glass surface below shipped with no standard property at all. Chrome
+   accepts the alias and looked fine; Firefox implements only the unprefixed
+   property, so it got the tint with none of the blur. Write the standard
+   property on its own and let the compiler add whatever prefix it needs. */
 @layer components {
   /* Frosted panel: the one surface recipe every card, sheet and bar uses.
      The light edge along the top is what reads as a pane of glass rather
@@ -391,7 +399,6 @@
   .glass {
     background-color: color-mix(in oklab, var(--tile) var(--glass-tint), transparent);
     backdrop-filter: blur(var(--glass-blur)) saturate(1.7);
-    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.7);
     border: 1px solid var(--glass-edge);
     box-shadow:
       var(--shadow-sm),
@@ -401,7 +408,6 @@
   .tile {
     background-color: color-mix(in oklab, var(--tile) var(--glass-tint), transparent);
     backdrop-filter: blur(var(--glass-blur)) saturate(1.7);
-    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.7);
     border: 1px solid var(--glass-edge);
     border-radius: var(--r-tile);
     box-shadow:
@@ -412,7 +418,6 @@
   .tile-raised {
     background-color: color-mix(in oklab, var(--tile-raised) var(--glass-tint-strong), transparent);
     backdrop-filter: blur(calc(var(--glass-blur) + 8px)) saturate(1.8);
-    -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 8px)) saturate(1.8);
     border: 1px solid var(--glass-edge);
     border-radius: var(--r-tile);
     box-shadow:
@@ -442,7 +447,6 @@
   .stat {
     background-color: color-mix(in oklab, var(--tile) var(--glass-tint), transparent);
     backdrop-filter: blur(var(--glass-blur)) saturate(1.7);
-    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.7);
     border: 1px solid var(--glass-edge);
     border-radius: var(--r-tile);
     box-shadow:
@@ -465,8 +469,6 @@
   .glass-bar,
   .frost-tile {
     backdrop-filter: blur(var(--chrome-blur)) saturate(1.9) brightness(var(--chrome-lift));
-    -webkit-backdrop-filter: blur(var(--chrome-blur)) saturate(1.9)
-      brightness(var(--chrome-lift));
   }
 
   .frost,
@@ -503,14 +505,12 @@
     .frost-tile {
       background-color: var(--tile);
       backdrop-filter: none;
-      -webkit-backdrop-filter: none;
     }
 
     .frost,
     .glass-bar {
       background-color: var(--ground);
       backdrop-filter: none;
-      -webkit-backdrop-filter: none;
     }
   }
 
@@ -670,6 +670,13 @@
     display: none;
   }
 
+  /* The home-indicator inset, for elements that set no bottom padding of their
+     own. It cannot be combined with `pb-*` or `py-*`: this lands in the same
+     cascade layer as those utilities and is declared after them, so it wins,
+     and the element silently loses the padding it asked for — on every device
+     without an inset, which is all of them but a notched phone. Where both are
+     wanted, write the sum at the call site:
+       pb-[calc(env(safe-area-inset-bottom,0px)+1.5rem)] */
   .safe-b {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
