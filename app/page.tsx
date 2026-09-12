@@ -59,7 +59,8 @@ export default function Page() {
     <>
       <StoryRail />
 
-      <div className="sticky top-14 z-30 flex items-center gap-1 border-b border-line bg-tile/85 px-3 py-2 backdrop-blur-xl lg:top-0">
+      {/* Solid, not translucent: this bar sits over scrolling cards. */}
+      <div className="sticky top-14 z-30 flex items-center gap-1 border-b border-line bg-ground px-3 py-2 lg:top-0">
         {(["following", "latest"] as const).map((t) => (
           <button
             key={t}

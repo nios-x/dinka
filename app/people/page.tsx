@@ -1,123 +1,175 @@
 "use client";
-import Image from "next/image";
-import React, { useEffect, useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Toaster } from "sonner";
-import { toast } from "sonner";
+
+import React from "react";
 import Link from "next/link";
-import PersonCard from "@/components/Friends/block"; // adjust path if needed
+import { motion } from "framer-motion";
+import { toast } from "sonner";
+import { UserPlus } from "lucide-react";
+import PageHeader from "@/components/shell/PageHeader";
+import EmptyState from "@/components/ui/empty-state";
+import PersonRow, { type Person } from "@/components/people/PersonRow";
+import { cn } from "@/lib/utils";
 
+/**
+ * Your people.
+ *
+ * Three views of the same graph: accounts you and they both follow, accounts
+ * that follow you and you haven't followed back, and accounts you follow that
+ * haven't followed back. The middle tab is where a new follower becomes a
+ * two-way connection, so it leads with a Follow back action.
+ */
 
+const TABS = [
+  { key: "mutual", label: "Mutuals", endpoint: "/api/v1/friends" },
+  { key: "followers", label: "Followers", endpoint: "/api/v1/friends/requestscame" },
+  { key: "following", label: "Following", endpoint: "/api/v1/friends/requested" },
+] as const;
 
-type Person = {
-  id: string;
-  name: string;
-  pic: string;
-};
+type TabKey = (typeof TABS)[number]["key"];
+
 export default function Page() {
-  const [peoples, setPeoples] = useState<Person[]>([]);
-  const [requests, setRequests] = useState<Person[]>([]);
+  const [tab, setTab] = React.useState<TabKey>("mutual");
+  const [lists, setLists] = React.useState<Partial<Record<TabKey, Person[]>>>({});
+  const [loading, setLoading] = React.useState(true);
+  const [pending, setPending] = React.useState<Record<string, boolean>>({});
 
-  const handleUnFollow = async (id: string, name: string) => {
-    const response = await fetch("/api/v1/friends/unfollow", {
-      body: JSON.stringify({ friendId: id }),
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-    });
-    if (response.ok) {
-      setPeoples((prev) => prev.filter((person) => person.id !== id));
-      toast("You Unfollowed: " + name, { position: "top-center" });
-    }
-  };
-  const handleFollow = async (id: string, name: string, pic: string) => {
-    const response = await fetch("/api/v1/friends/follow", {
-      body: JSON.stringify({ friendId: id }),
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-    });
+  const active = TABS.find((t) => t.key === tab)!;
+  const people = lists[tab];
 
-    if (!response.ok) {
-      const error = await response.text();
-      console.error("Failed to accept request:", error);
+  React.useEffect(() => {
+    if (lists[tab]) {
+      setLoading(false);
       return;
     }
-    setRequests((prev) => prev.filter((person) => person.id !== id))
-    setPeoples((prev) => [...prev, { id, name, pic }]);
+    setLoading(true);
+    fetch(active.endpoint, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setLists((l) => ({ ...l, [tab]: d?.people ?? [] })))
+      .catch(() => setLists((l) => ({ ...l, [tab]: [] })))
+      .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
 
-    toast("You Followed: " + name, { position: "top-center" });
-  };
+  const act = async (person: Person, follow: boolean) => {
+    setPending((p) => ({ ...p, [person.id]: true }));
+    try {
+      const res = await fetch(follow ? "/api/v1/friends/follow" : "/api/v1/friends/unfollow", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ friendId: person.id }),
+      });
+      if (!res.ok) throw new Error();
 
-  useEffect(() => {
-    (async () => {
-      const res = await fetch("/api/v1/friends");
-      const data = await res.json();
-      if (!res.ok || !data.people) {
-        console.log("Failed to fetch people");
-        return;
-      }
-      setPeoples(data.people);
-    })();
-  }, []);
-  useEffect(() => {
-    (async () => {
-      const res = await fetch("/api/v1/friends/requestscame");
-      const data = await res.json();
-      if (!res.ok || !data.people) {
-        console.log("Failed to fetch people");
-        return;
-      }
-      setRequests(data.people);
-    })();
-  }, []);
-  const handleReject = async (id: string, name: string) => {
-    const response = await fetch("/api/v1/friends/reject", {
-      body: JSON.stringify({ friendId: id }),
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-    });
-
-    if (response.ok) {
-      setRequests((prev) => prev.filter((person) => person.id !== id));
-      toast("You Rejected: " + name, { position: "top-center" });
-    } else {
-      const error = await response.text();
-      console.error("Failed to reject request:", error);
+      // Any follow change invalidates every list, so drop the cache.
+      setLists((l) => ({ [tab]: (l[tab] ?? []).filter((p) => p.id !== person.id) }));
+      toast.success(
+        follow ? `Following ${person.name ?? "them"}` : `Unfollowed ${person.name ?? "them"}`
+      );
+    } catch {
+      toast.error("That didn’t work — try again");
+    } finally {
+      setPending((p) => ({ ...p, [person.id]: false }));
     }
   };
+
   return (
-    <div className="w-full space-y-4 dark:bg-[#121212] min-h-screen">
-      <div className="flex justify-end pr-4 gap-x-2">
-        <Link className="text-right bg-zinc-800 text-white px-3 py-2 rounded-full mt-5 active:bg-zinc-600/10 active:text-black text-xs font-bold" href={"/people/find"}>Find Friends</Link>
-        <Link className="text-right bg-zinc-800 text-white px-3 py-2 rounded-full mt-5 active:bg-zinc-600/10 active:text-black text-xs font-bold" href={"/people/requested"}>Requested</Link>
-      </div>
-      <Toaster />
-      {requests.length !== 0 && (
-        <h2 className=" p-2 font-bold">Confirm Requests</h2>
-      )}
-      {requests.map((e) => (
-        <PersonCard
-          key={e.id}
-          person={e}
-          primaryActionLabel="Accept"
-          onPrimaryClick={() => handleFollow(e.id, e.name, e.pic)}
-          onSecondaryClick={() => handleReject(e.id, e.name)}
-          secondaryActionLabel="Reject"
-        />
-      ))}
-      {peoples.length === 0 && (
-        <p className="text-center text-muted-foreground pt-14">No people found.</p>
-      )}
+    <>
+      <PageHeader
+        title="People"
+        actions={
+          <Link
+            href="/people/find"
+            className="press flex h-9 items-center gap-1.5 rounded-full bg-glaze px-3.5 text-[0.8rem] font-semibold text-glaze-on"
+          >
+            <UserPlus size={15} />
+            Find people
+          </Link>
+        }
+      >
+        <div className="flex gap-1">
+          {TABS.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setTab(t.key)}
+              aria-pressed={tab === t.key}
+              className={cn(
+                "relative rounded-full px-4 py-1.5 text-[0.85rem] font-semibold transition-colors",
+                tab === t.key ? "text-ink" : "text-ink-3 hover:text-ink-2"
+              )}
+            >
+              {tab === t.key && (
+                <motion.span
+                  layoutId="people-tab"
+                  className="absolute inset-0 rounded-full bg-tile-sunk"
+                  transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                />
+              )}
+              <span className="relative">{t.label}</span>
+              {people && tab === t.key && (
+                <span className="relative ml-1.5 text-[0.72rem] tabular-nums text-ink-3">
+                  {people.length}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      </PageHeader>
 
-      {peoples.map((e) => (
-        <PersonCard
-          key={e.id}
-          person={e}
-          primaryActionLabel="View"
-          secondaryActionLabel="Unfollow"
-          onSecondaryClick={() => handleUnFollow(e.id, e.name)}
+      {loading && !people ? (
+        <div className="divide-y divide-line">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-3 p-4">
+              <div className="skeleton h-14 w-14 rounded-full" />
+              <div className="flex-1 space-y-2">
+                <div className="skeleton h-3.5 w-1/3 rounded-full" />
+                <div className="skeleton h-3 w-1/2 rounded-full" />
+              </div>
+              <div className="skeleton h-9 w-20 rounded-full" />
+            </div>
+          ))}
+        </div>
+      ) : !people || people.length === 0 ? (
+        <EmptyState
+          icon={<UserPlus size={26} />}
+          title={
+            tab === "mutual"
+              ? "No mutual follows yet"
+              : tab === "followers"
+                ? "Nobody new is following you"
+                : "You’re not following anyone yet"
+          }
+          body={
+            tab === "mutual"
+              ? "When you and someone follow each other, they show up here."
+              : tab === "followers"
+                ? "New followers you haven’t followed back appear here."
+                : "Follow a few accounts and your feed fills up."
+          }
+          action={{ label: "Find people to follow", href: "/people/find" }}
         />
-      ))}
-
-    </div>
+      ) : (
+        <ul className="divide-y divide-line">
+          {people.map((person, i) => (
+            <motion.li
+              key={person.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: Math.min(i, 8) * 0.03, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <PersonRow
+                person={person}
+                pending={pending[person.id]}
+                primary={
+                  tab === "followers"
+                    ? { label: "Follow back", onClick: () => act(person, true) }
+                    : { label: "Following", done: true, onClick: () => act(person, false) }
+                }
+              />
+            </motion.li>
+          ))}
+        </ul>
+      )}
+    </>
   );
 }

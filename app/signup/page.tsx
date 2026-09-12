@@ -1,18 +1,28 @@
-import { GalleryVerticalEnd } from "lucide-react"
+import type { Metadata } from "next";
+import Link from "next/link";
+import { LoginForm } from "@/components/signup-page";
+import AuthShell from "@/components/auth/AuthShell";
 
-import { LoginForm } from "@/components/signup-page"
+export const metadata: Metadata = {
+  title: "Create an account",
+  description: "Join Dinka.",
+};
 
-export default function LoginPage() {
+export default function SignupPage() {
   return (
-    <div className="bg-muted flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
-      <div className="flex w-full max-w-sm flex-col gap-6">
-        <a href="/" className="flex items-center gap-2 self-center font-medium bg-white w-16 h-16 justify-center rounded-3xl border">
-          <div className=" logo text-center w-min mt-1">
-            dinka
-          </div>
-        </a>
-        <LoginForm />
-      </div>
-    </div>
-  )
+    <AuthShell
+      title="Create your account"
+      subtitle="Follow a few people, post something. That’s the whole setup."
+      footer={
+        <>
+          Already have an account?{" "}
+          <Link href="/login" className="font-semibold text-glaze hover:underline dark:text-teal">
+            Sign in
+          </Link>
+        </>
+      }
+    >
+      <LoginForm />
+    </AuthShell>
+  );
 }

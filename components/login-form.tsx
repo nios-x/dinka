@@ -1,144 +1,176 @@
-"use client"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import dinkaconfig from "@/dinka-config"
-import Link from "next/link"
-import { signIn, signOut } from "next-auth/react";
-import { useRouter } from "next/navigation"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { useState } from "react"
-import { useSession, } from "next-auth/react"
-export function LoginForm({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
-  const router = useRouter()
-  const [credentials, setCredentials] = useState({
-    email: "",
-    password: ""
-  })
-  const { data: session } = useSession()
+"use client";
+
+import React from "react";
+import Link from "next/link";
+import { signIn, signOut, useSession } from "next-auth/react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import dinkaconfig from "@/dinka-config";
+
+/** Sign-in: Google, or email and password. */
+export function LoginForm({ className }: { className?: string }) {
+  const { data: session } = useSession();
+  const [credentials, setCredentials] = React.useState({ email: "", password: "" });
+  const [show, setShow] = React.useState(false);
+  const [busy, setBusy] = React.useState<"google" | "email" | null>(null);
+
   if (session) {
     return (
-      <div className="text-center ">
-        Signed in as {session?.user?.email} <br />
-        <button onClick={() => signOut()}>Sign out</button>
+      <div className="rounded-[var(--r-tile)] border border-line bg-tile p-5 text-center">
+        <p className="text-[0.95rem] text-ink">
+          You’re signed in as <span className="font-semibold">{session.user?.email}</span>
+        </p>
+        <div className="mt-4 flex flex-col gap-2">
+          <Link
+            href="/"
+            className="press rounded-full bg-glaze py-2.5 text-[0.875rem] font-semibold text-glaze-on"
+          >
+            Go to your feed
+          </Link>
+          <button
+            type="button"
+            onClick={() => signOut()}
+            className="press rounded-full border border-line py-2.5 text-[0.875rem] font-semibold text-ink"
+          >
+            Sign out
+          </button>
+        </div>
       </div>
-    )
+    );
   }
 
-  const handleChange = (e: any) => {
-    setCredentials((cred) => ({
-      ...cred,
-      [e.target.name]: e.target.value,
-    }))
-  }
-  const handleSign = async (e: any) => {
-    e.preventDefault()
-    signIn("email-password", {
-      callbackUrl: "/",
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!credentials.email || !credentials.password) return;
+
+    setBusy("email");
+    const res = await signIn("email-password", {
+      redirect: false,
       email: credentials.email,
-      password: credentials.password
-    })
-  }
+      password: credentials.password,
+    });
+    setBusy(null);
+
+    if (res?.error) {
+      toast.error("That email and password don’t match an account");
+      return;
+    }
+    window.location.href = "/";
+  };
+
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card>
-        <CardHeader className="text-center">
-          <CardTitle className="text-xl">Welcome back</CardTitle>
-          <CardDescription>
-            Login with your Apple or Google account
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+    <div className={cn("flex flex-col gap-5", className)}>
+      <button
+        type="button"
+        onClick={() => {
+          setBusy("google");
+          signIn("google", { callbackUrl: "/" });
+        }}
+        disabled={busy !== null}
+        className="press flex h-12 items-center justify-center gap-2.5 rounded-full border border-line bg-tile text-[0.925rem] font-semibold text-ink transition-colors hover:border-line-strong disabled:opacity-60"
+      >
+        {busy === "google" ? (
+          <Loader2 size={17} className="animate-spin" />
+        ) : (
+          <GoogleMark />
+        )}
+        Continue with Google
+      </button>
 
-          <div className="grid gap-6">
-            <div className="flex flex-col gap-4">
-              <Button variant="outline" className="w-full">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                  <path
-                    d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"
-                    fill="currentColor"
-                  />
-                </svg>
-                Login with Apple
-              </Button>
-              <Button variant="outline" className="w-full" onClick={() => { signIn("google", { callbackUrl: "/" }); }}>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                  <path
-                    d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
-                    fill="currentColor"
-                  />
-                </svg>
-                Login with Google
-              </Button>
-            </div>
-            <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">
-              <span className="bg-card text-muted-foreground relative z-10 px-2">
-                Or continue with
-              </span>
-            </div>
-            <form onSubmit={handleSign}>
-              <div className="grid gap-6">
-                <div className="grid gap-3">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="m@example.com"
-                    name="email"
-                    onChange={handleChange}
-                    value={credentials.email}
-                    required
-                  />
-                </div>
-                <div className="grid gap-3">
-                  <div className="flex items-center">
-                    <Label htmlFor="password">Password</Label>
-                    <Link
-                      href={dinkaconfig.links["forgot-your-password"]}
-                      className="ml-auto text-sm underline-offset-4 hover:underline"
-                    >
-                      Forgot your password?
-                    </Link>
-                  </div>
-                  <Input
-                    id="password"
-                    type="password"
-                    required
-                    name="password"
-                    onChange={handleChange}
-                    value={credentials.password}
-                  />
-                </div>
-              </div>
-              <Button type="submit" className="w-full mt-6">
-                Login
-              </Button>
-            </form>
-            <div className="text-center text-sm">
-              Don&apos;t have an account?{" "}
-              <Link href={dinkaconfig.links.signup} className="underline underline-offset-4">
-                Sign up
-              </Link>
-            </div>
-
-          </div>
-
-        </CardContent>
-      </Card>
-      <div className="text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">
-        By clicking continue, you agree to our <Link href={dinkaconfig.links["terms-of-service"]}>Terms of Service</Link>{" "}
-        and <Link href={dinkaconfig.links["privacy-policy"]}>Privacy Policy</Link>.
+      <div className="relative text-center">
+        <span className="absolute inset-x-0 top-1/2 h-px bg-line" aria-hidden />
+        <span className="meta relative bg-ground px-3">or</span>
       </div>
+
+      <form onSubmit={submit} className="flex flex-col gap-3.5">
+        <div>
+          <label htmlFor="email" className="mb-1.5 block text-[0.82rem] font-semibold text-ink-2">
+            Email
+          </label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            required
+            value={credentials.email}
+            onChange={(e) => setCredentials((c) => ({ ...c, email: e.target.value }))}
+            placeholder="you@example.com"
+            className={fieldClass}
+          />
+        </div>
+
+        <div>
+          <div className="mb-1.5 flex items-baseline justify-between gap-2">
+            <label htmlFor="password" className="text-[0.82rem] font-semibold text-ink-2">
+              Password
+            </label>
+            <Link
+              href={`/${dinkaconfig.links["forgot-your-password"]}`}
+              className="text-[0.78rem] font-medium text-glaze hover:underline dark:text-teal"
+            >
+              Forgot it?
+            </Link>
+          </div>
+          <div className="relative">
+            <input
+              id="password"
+              name="password"
+              type={show ? "text" : "password"}
+              autoComplete="current-password"
+              required
+              value={credentials.password}
+              onChange={(e) => setCredentials((c) => ({ ...c, password: e.target.value }))}
+              placeholder="Your password"
+              className={cn(fieldClass, "pr-12")}
+            />
+            <button
+              type="button"
+              onClick={() => setShow((s) => !s)}
+              aria-label={show ? "Hide password" : "Show password"}
+              className="absolute right-1.5 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full text-ink-3 transition-colors hover:text-ink"
+            >
+              {show ? <EyeOff size={17} /> : <Eye size={17} />}
+            </button>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          disabled={busy !== null}
+          className="press mt-1 flex h-12 items-center justify-center gap-2 rounded-full bg-glaze text-[0.925rem] font-semibold text-glaze-on transition-colors hover:bg-glaze-hover disabled:opacity-60"
+        >
+          {busy === "email" && <Loader2 size={17} className="animate-spin" />}
+          Sign in
+        </button>
+      </form>
     </div>
-  )
+  );
+}
+
+const fieldClass =
+  "h-12 w-full rounded-[var(--r-field)] border border-line bg-tile px-4 text-[0.95rem] text-ink outline-none transition-colors placeholder:text-ink-3 focus:border-glaze";
+
+function GoogleMark() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
+      <path
+        fill="#4285F4"
+        d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.46a5.52 5.52 0 0 1-2.4 3.62v3h3.88c2.27-2.09 3.58-5.17 3.58-8.81Z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 24c3.24 0 5.96-1.08 7.94-2.92l-3.88-3c-1.08.72-2.45 1.15-4.06 1.15-3.12 0-5.77-2.11-6.71-4.95H1.28v3.09A12 12 0 0 0 12 24Z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.29 14.28a7.2 7.2 0 0 1 0-4.56V6.63H1.28a12 12 0 0 0 0 10.74l4.01-3.09Z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 4.77c1.76 0 3.34.61 4.59 1.8l3.44-3.44C17.95 1.19 15.24 0 12 0A12 12 0 0 0 1.28 6.63l4.01 3.09C6.23 6.88 8.88 4.77 12 4.77Z"
+      />
+    </svg>
+  );
 }

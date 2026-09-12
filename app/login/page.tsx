@@ -1,17 +1,28 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { LoginForm } from "@/components/login-form";
+import AuthShell from "@/components/auth/AuthShell";
 
-import { LoginForm } from "@/components/login-form"
+export const metadata: Metadata = {
+  title: "Sign in",
+  description: "Sign in to Dinka.",
+};
 
 export default function LoginPage() {
   return (
-    <div className="bg-muted flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
-      <div className="flex w-full max-w-sm flex-col gap-6">
-        <a href="/" className="flex items-center gap-2 self-center font-medium bg-white w-16 h-16 justify-center rounded-3xl border">
-          <div className=" logo text-center w-min mt-1">
-            dinka
-          </div>
-        </a>
-        <LoginForm />
-      </div>
-    </div>
-  )
+    <AuthShell
+      title="Welcome back"
+      subtitle="Sign in to pick up where you left off."
+      footer={
+        <>
+          New here?{" "}
+          <Link href="/signup" className="font-semibold text-glaze hover:underline dark:text-teal">
+            Create an account
+          </Link>
+        </>
+      }
+    >
+      <LoginForm />
+    </AuthShell>
+  );
 }

@@ -1,356 +1,463 @@
 "use client";
 
-import React, { useState, useRef } from "react";
-import {
-    User,
-    Shield,
-    Bell,
-    LogOut,
-    ChevronRight,
-    Upload,
-    Mail,
-    Lock,
-    Smartphone
-} from "lucide-react";
+import React from "react";
+import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
-import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import {
+  User,
+  Palette,
+  Shield,
+  LogOut,
+  Camera,
+  Loader2,
+  Monitor,
+  Moon,
+  Sun,
+  Trash2,
+  AtSign,
+  MapPin,
+  Link as LinkIcon,
+} from "lucide-react";
+import { useTheme } from "next-themes";
+import PageHeader from "@/components/shell/PageHeader";
+import { Avatar } from "@/components/ui/avatar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 
-export default function SettingsPage() {
-    const { data: session, update } = useSession();
-    const [activeTab, setActiveTab] = useState("profile");
-    const [loading, setLoading] = useState(false);
-    const [userData, setUserData] = useState({
-        name: "",
-        bio: "",
-        image: ""
-    });
+/**
+ * Settings.
+ *
+ * Three sections on one scrollable page rather than a nested menu — there is
+ * not enough here to justify making people navigate for it. The save button
+ * only wakes up once something has actually changed.
+ */
 
-    const fileInputRef = useRef<HTMLInputElement>(null);
+type Form = {
+  name: string;
+  username: string;
+  bio: string;
+  location: string;
+  website: string;
+  pronouns: string;
+  image: string;
+};
 
-    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
+const EMPTY: Form = {
+  name: "",
+  username: "",
+  bio: "",
+  location: "",
+  website: "",
+  pronouns: "",
+  image: "",
+};
 
-        // Optimistic UI update or loading state
-        const toastId = toast.loading("Uploading image...");
+export default function Page() {
+  const { data: session, update } = useSession();
+  const { theme, setTheme } = useTheme();
+  const [form, setForm] = React.useState<Form>(EMPTY);
+  const [initial, setInitial] = React.useState<Form>(EMPTY);
+  const [loading, setLoading] = React.useState(true);
+  const [saving, setSaving] = React.useState(false);
+  const [uploading, setUploading] = React.useState(false);
+  const [confirmDelete, setConfirmDelete] = React.useState(false);
+  const fileRef = React.useRef<HTMLInputElement>(null);
 
-        try {
-            const formData = new FormData();
-            formData.append("file", file);
+  const me = session?.user as { id?: string; name?: string | null; image?: string | null } | undefined;
 
-            const res = await fetch("/api/v1/user/upload-image", {
-                method: "POST",
-                body: formData,
-            });
+  React.useEffect(() => {
+    if (!me?.id) return;
+    fetch("/api/v1/getuserdetails", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: me.id }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!d?.user) return;
+        const next: Form = {
+          name: d.user.name ?? "",
+          username: d.user.username ?? "",
+          bio: d.user.bio ?? "",
+          location: d.user.location ?? "",
+          website: d.user.website ?? "",
+          pronouns: d.user.pronouns ?? "",
+          image: d.user.pic ?? d.user.image ?? "",
+        };
+        setForm(next);
+        setInitial(next);
+      })
+      .catch(() => toast.error("Could not load your profile"))
+      .finally(() => setLoading(false));
+  }, [me?.id]);
 
-            const data = await res.json();
+  const dirty = JSON.stringify(form) !== JSON.stringify(initial);
 
-            if (!res.ok) {
-                throw new Error(data.error || "Upload failed");
-            }
+  const set = (key: keyof Form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    setForm((f) => ({ ...f, [key]: e.target.value }));
 
-            if (data.url) {
-                setUserData(prev => ({ ...prev, image: data.url }));
-                toast.success("Image uploaded! Don't forget to save changes.", { id: toastId });
-            }
-        } catch (error) {
-            console.error("Upload error:", error);
-            toast.error("Failed to upload image", { id: toastId });
-        } finally {
-            // Reset input so same file can be selected again if needed
-            if (fileInputRef.current) fileInputRef.current.value = "";
+  const pickImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 8 * 1024 * 1024) {
+      toast.error("Pick an image under 8MB");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const res = await fetch("/api/v1/user/upload-image", { method: "POST", body });
+      const data = await res.json();
+      if (!res.ok || !data.url) throw new Error(data.error);
+      setForm((f) => ({ ...f, image: data.url }));
+      toast.success("Picture ready — save to apply it");
+    } catch {
+      toast.error("Could not upload that image");
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch("/api/v1/user/update", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      setInitial(form);
+      await update?.({ name: form.name, image: form.image });
+      toast.success("Profile saved");
+    } catch (err: any) {
+      toast.error(err?.message ?? "Could not save those changes");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteAccount = async () => {
+    setConfirmDelete(false);
+    try {
+      const res = await fetch("/api/v1/user/delete", { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      toast.success("Your account has been deleted");
+      await signOut({ callbackUrl: "/" });
+    } catch {
+      toast.error("Could not delete your account");
+    }
+  };
+
+  return (
+    <>
+      <PageHeader
+        title="Settings"
+        subtitle="Your profile, appearance and account"
+        actions={
+          <button
+            type="button"
+            onClick={save}
+            disabled={!dirty || saving}
+            className={cn(
+              "press flex h-9 items-center gap-1.5 rounded-full px-4 text-[0.82rem] font-semibold transition-colors",
+              dirty ? "bg-glaze text-glaze-on hover:bg-glaze-hover" : "bg-tile-sunk text-ink-4"
+            )}
+          >
+            {saving && <Loader2 size={14} className="animate-spin" />}
+            {saving ? "Saving" : "Save"}
+          </button>
         }
-    };
+      />
 
-
-    React.useEffect(() => {
-        if (session?.user) {
-            setUserData(prev => ({ ...prev, name: session.user?.name || "", image: session.user?.image || "" }));
-            // Fetch bio from API
-            fetch("/api/v1/getuserdetails", {
-                method: "POST",
-                body: JSON.stringify({ id: (session.user as any).id })
-            })
-                .then(res => res.json())
-                .then(data => {
-                    if (data?.user?.bio) {
-                        setUserData(prev => ({ ...prev, bio: data.user.bio }));
-                    }
-                })
-                .catch(err => console.error("Failed to fetch user details", err));
-        }
-    }, [session]);
-
-    const tabs = [
-        { id: "profile", label: "Profile", icon: User },
-        { id: "account", label: "Account", icon: Lock },
-        { id: "notifications", label: "Notifications", icon: Bell },
-    ];
-
-    const handleSave = async () => {
-        setLoading(true);
-        try {
-            const res = await fetch("/api/v1/user/update", {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(userData)
-            });
-
-            if (res.ok) {
-                const data = await res.json();
-                await update({ ...session, user: { ...session?.user, name: userData.name } });
-                toast.success("Settings saved successfully");
-            } else {
-                toast.error("Failed to save settings");
-            }
-        } catch (error) {
-            console.error(error);
-            toast.error("Something went wrong");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleDelete = async () => {
-        if (!confirm("Are you sure you want to delete your account? This action cannot be undone.")) return;
-
-        setLoading(true);
-        try {
-            const res = await fetch("/api/v1/user/delete", {
-                method: "DELETE"
-            });
-
-            if (res.ok) {
-                toast.success("Account deleted successfully");
-                signOut();
-            } else {
-                toast.error("Failed to delete account");
-            }
-        } catch (error) {
-            console.error(error);
-            toast.error("Something went wrong");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    return (
-        <div className="min-h-screen pt-24 pb-20 px-4 sm:px-6">
-            <div className="max-w-4xl mx-auto">
-                <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100 mb-8">Settings</h1>
-
-                <div className="flex flex-col md:flex-row gap-8">
-                    {/* Sidebar Navigation */}
-                    <nav className="w-full md:w-64 flex-shrink-0 sticky top-24 z-10 self-start">
-                        <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl rounded-2xl p-2 shadow-sm border border-zinc-100 dark:border-zinc-800/50 flex md:flex-col overflow-x-auto md:overflow-visible gap-2 md:gap-0 scrollbar-hide">
-                            {tabs.map((tab) => (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => setActiveTab(tab.id)}
-                                    className={cn(
-                                        "flex-shrink-0 flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap",
-                                        activeTab === tab.id
-                                            ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm"
-                                            : "text-zinc-500 dark:text-zinc-400 hover:bg-white/50 dark:hover:bg-zinc-800/50 hover:text-zinc-900 dark:hover:text-zinc-200"
-                                    )}
-                                >
-                                    <tab.icon className="w-5 h-5" />
-                                    {tab.label}
-                                    {activeTab === tab.id && (
-                                        <ChevronRight className="w-4 h-4 ml-auto opacity-50" />
-                                    )}
-                                </button>
-                            ))}
-                            <div className="hidden md:block my-2 border-t border-zinc-100 dark:border-zinc-800/50" />
-                            <button
-                                onClick={() => signOut()}
-                                className="hidden md:flex w-full items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all"
-                            >
-                                <LogOut className="w-5 h-5" />
-                                Sign Out
-                            </button>
-                        </div>
-                        {/* Mobile-only Logout (below tabs or somewhere else? Maybe just keep it in the list if space permits, but scrolling horizontal is fine). Re-adding it to the scrollable list for mobile might be tricky if mixed with tabs. Let's keep it hidden on mobile nav and add it to the bottom of the page content or assume user uses the slider/navbar for logout?
-                         Actually, the user can logout from the navbar slider. This settings page is another way.
-                         Let's just keep it hidden from the top nav on mobile to save space, or add it to the account tab?
-                         Let's hide it on mobile nav and rely on the Account tab's "Delete Account" / add a logout there, or rely on Navbar.
-                         Or, just make it the last item in the scrollable list.
-                         */}
-                    </nav>
-
-                    {/* Content Area */}
-                    <div className="flex-1">
-                        <div className="bg-white/60 dark:bg-zinc-900/40 backdrop-blur-xl rounded-3xl p-6 sm:p-8 shadow-sm border border-zinc-100 dark:border-zinc-800/50">
-
-                            {/* Profile Settings */}
-                            {activeTab === "profile" && (
-                                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-
-
-                                    <div className="flex items-center gap-6">
-                                        <div
-                                            className="relative group cursor-pointer"
-                                            onClick={() => fileInputRef.current?.click()}
-                                        >
-                                            <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-zinc-100 dark:border-zinc-800">
-                                                <Image
-                                                    src={userData.image || session?.user?.image || "https://imgs.search.brave.com/iiL6FIsWn1W2fHExlUdzmEXVolOVkj4jfy06SrdfTf8/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9jZG4x/LnZlY3RvcnN0b2Nr/LmNvbS9pL3RodW1i/LWxhcmdlLzk3Lzcw/L3B1cnBsZS11c2Vy/LWljb24taW4tdGhl/LWNpcmNsZS1hLXNv/bGlkLWdyYWRpZW50/LXZlY3Rvci0yMzUx/OTc3MC5qcGc"}
-                                                    alt="Profile"
-                                                    width={96}
-                                                    height={96}
-                                                    className="object-cover w-full h-full"
-                                                />
-                                            </div>
-                                            <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <Upload className="w-6 h-6 text-white" />
-                                            </div>
-                                        </div>
-
-                                        <input
-                                            type="file"
-                                            ref={fileInputRef}
-                                            className="hidden"
-                                            accept="image/*"
-                                            onChange={handleImageUpload}
-                                        />
-
-                                        <div>
-                                            <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
-                                                {session?.user?.name || "User"}
-                                            </h2>
-                                            <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                                                {session?.user?.email || "user@example.com"}
-                                            </p>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="mt-2 h-8"
-                                                onClick={() => fileInputRef.current?.click()}
-                                            >
-                                                Change Picture
-                                            </Button>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="name">Display Name</Label>
-                                            <Input
-                                                id="name"
-                                                value={userData.name}
-                                                onChange={(e) => setUserData({ ...userData, name: e.target.value })}
-                                                className="max-w-md bg-zinc-50 dark:bg-zinc-950/50"
-                                            />
-                                        </div>
-
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="bio">Bio</Label>
-                                            <textarea
-                                                id="bio"
-                                                value={userData.bio}
-                                                onChange={(e) => setUserData({ ...userData, bio: e.target.value })}
-                                                className="flex min-h-[100px] w-full max-w-md rounded-md border border-input bg-zinc-50 dark:bg-zinc-950/50 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                                placeholder="Tell us about yourself..."
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Account Settings */}
-                            {activeTab === "account" && (
-                                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                    <div className="space-y-4">
-                                        <h3 className="text-lg font-semibold flex items-center gap-2">
-                                            <Mail className="w-5 h-5 text-zinc-500" />
-                                            Email Address
-                                        </h3>
-                                        <div className="max-w-md space-y-2">
-                                            <Input
-                                                disabled
-                                                defaultValue={session?.user?.email || ""}
-                                                className="bg-zinc-100 dark:bg-zinc-800"
-                                            />
-                                            <p className="text-xs text-zinc-500">
-                                                Your email address is managed through your login provider.
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <Separator />
-
-                                    <div className="space-y-4">
-                                        <h3 className="text-lg font-semibold text-red-500 flex items-center gap-2">
-                                            <Shield className="w-5 h-5" />
-                                            Danger Zone
-                                        </h3>
-                                        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                                            Once you delete your account, there is no going back. Please be certain.
-                                        </p>
-                                        <div className="flex flex-col gap-3">
-                                            <Button variant="outline" onClick={() => signOut()} className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 md:hidden">
-                                                <LogOut className="w-4 h-4 mr-2" />
-                                                Log Out
-                                            </Button>
-                                            <Button
-                                                variant="destructive"
-                                                className="w-full justify-start"
-                                                onClick={handleDelete}
-                                                disabled={loading}
-                                            >
-                                                {loading ? "Deleting..." : "Delete Account"}
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Notifications */}
-                            {activeTab === "notifications" && (
-                                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                    <div className="flex items-center justify-between">
-                                        <div className="space-y-0.5">
-                                            <Label>Push Notifications</Label>
-                                            <p className="text-sm text-zinc-500">
-                                                Receive notifications on your device
-                                            </p>
-                                        </div>
-                                        <Switch />
-                                    </div>
-                                    <Separator />
-                                    <div className="flex items-center justify-between">
-                                        <div className="space-y-0.5">
-                                            <Label>Email Notifications</Label>
-                                            <p className="text-sm text-zinc-500">
-                                                Receive daily summaries and updates
-                                            </p>
-                                        </div>
-                                        <Switch defaultChecked />
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="mt-8 pt-6 border-t border-zinc-100 dark:border-zinc-800 flex justify-end">
-                                <Button
-                                    onClick={handleSave}
-                                    className="bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200"
-                                    disabled={loading}
-                                >
-                                    {loading ? "Saving..." : "Save Changes"}
-                                </Button>
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
+      <div className="space-y-3 p-3 sm:p-4">
+        {/* ── Profile ── */}
+        <Section icon={<User size={16} />} title="Profile" note="This is what other people see.">
+          {loading ? (
+            <div className="space-y-3">
+              <div className="skeleton h-20 w-20 rounded-full" />
+              <div className="skeleton h-10 w-full rounded-[var(--r-field)]" />
+              <div className="skeleton h-24 w-full rounded-[var(--r-field)]" />
             </div>
+          ) : (
+            <>
+              <div className="flex items-center gap-4">
+                <div className="relative shrink-0">
+                  <Avatar src={form.image} name={form.name} userId={me?.id} size="2xl" />
+                  <button
+                    type="button"
+                    onClick={() => fileRef.current?.click()}
+                    disabled={uploading}
+                    aria-label="Change your picture"
+                    className="press absolute -bottom-1 -right-1 grid h-9 w-9 place-items-center rounded-full bg-glaze text-glaze-on ring-[3px] ring-tile"
+                  >
+                    {uploading ? <Loader2 size={15} className="animate-spin" /> : <Camera size={15} />}
+                  </button>
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    onChange={pickImage}
+                  />
+                </div>
+
+                <div className="min-w-0">
+                  <p className="text-[1rem] font-semibold text-ink">{form.name || "Your name"}</p>
+                  <p className="meta truncate">{session?.user?.email}</p>
+                  {me?.id && (
+                    <Link
+                      href={`/profile?id=${me.id}`}
+                      className="mt-1 inline-block text-[0.8rem] font-medium text-glaze hover:underline dark:text-teal"
+                    >
+                      View your profile
+                    </Link>
+                  )}
+                </div>
+              </div>
+
+              <Field label="Display name" htmlFor="name">
+                <input
+                  id="name"
+                  value={form.name}
+                  onChange={set("name")}
+                  maxLength={50}
+                  placeholder="What people should call you"
+                  className={inputClass}
+                />
+              </Field>
+
+              <Field label="Handle" htmlFor="username" hint="Letters, numbers, dots and underscores.">
+                <span className="relative block">
+                  <AtSign
+                    size={15}
+                    className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-3"
+                  />
+                  <input
+                    id="username"
+                    value={form.username}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, username: e.target.value.replace(/[^a-zA-Z0-9_.]/g, "") }))
+                    }
+                    maxLength={32}
+                    placeholder="yourhandle"
+                    className={cn(inputClass, "pl-9")}
+                  />
+                </span>
+              </Field>
+
+              <Field label="Bio" htmlFor="bio" hint={`${form.bio.length}/300`}>
+                <textarea
+                  id="bio"
+                  value={form.bio}
+                  onChange={set("bio")}
+                  maxLength={300}
+                  rows={3}
+                  placeholder="A line or two about you"
+                  className={cn(inputClass, "h-auto resize-y py-2.5 leading-relaxed")}
+                />
+              </Field>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field label="Location" htmlFor="location">
+                  <span className="relative block">
+                    <MapPin
+                      size={15}
+                      className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-3"
+                    />
+                    <input
+                      id="location"
+                      value={form.location}
+                      onChange={set("location")}
+                      maxLength={60}
+                      placeholder="Where you are"
+                      className={cn(inputClass, "pl-9")}
+                    />
+                  </span>
+                </Field>
+
+                <Field label="Pronouns" htmlFor="pronouns">
+                  <input
+                    id="pronouns"
+                    value={form.pronouns}
+                    onChange={set("pronouns")}
+                    maxLength={30}
+                    placeholder="they/them"
+                    className={inputClass}
+                  />
+                </Field>
+              </div>
+
+              <Field label="Website" htmlFor="website">
+                <span className="relative block">
+                  <LinkIcon
+                    size={15}
+                    className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-3"
+                  />
+                  <input
+                    id="website"
+                    value={form.website}
+                    onChange={set("website")}
+                    maxLength={200}
+                    inputMode="url"
+                    placeholder="yoursite.com"
+                    className={cn(inputClass, "pl-9")}
+                  />
+                </span>
+              </Field>
+            </>
+          )}
+        </Section>
+
+        {/* ── Appearance ── */}
+        <Section icon={<Palette size={16} />} title="Appearance" note="Applies on this device.">
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { key: "light", label: "Light", Icon: Sun },
+              { key: "dark", label: "Dark", Icon: Moon },
+              { key: "system", label: "System", Icon: Monitor },
+            ].map((opt) => (
+              <button
+                key={opt.key}
+                type="button"
+                onClick={() => setTheme(opt.key)}
+                aria-pressed={theme === opt.key}
+                className={cn(
+                  "press flex flex-col items-center gap-2 rounded-[var(--r-field)] border py-4 text-[0.82rem] font-semibold transition-colors",
+                  theme === opt.key
+                    ? "border-glaze bg-glaze-softer text-ink"
+                    : "border-line text-ink-2 hover:border-line-strong"
+                )}
+              >
+                <opt.Icon size={19} />
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </Section>
+
+        {/* ── Account ── */}
+        <Section icon={<Shield size={16} />} title="Account">
+          <div className="space-y-1">
+            <Row label="Email" value={session?.user?.email ?? "—"} />
+            <Row label="Signed in with" value={"Dinka account"} />
+          </div>
+
+          <button
+            type="button"
+            onClick={() => signOut({ callbackUrl: "/" })}
+            className="press mt-2 flex w-full items-center gap-2.5 rounded-[var(--r-field)] px-3.5 py-3 text-left text-[0.9rem] font-semibold text-ink transition-colors hover:bg-tile-sunk"
+          >
+            <LogOut size={16} />
+            Sign out
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setConfirmDelete(true)}
+            className="press flex w-full items-center gap-2.5 rounded-[var(--r-field)] px-3.5 py-3 text-left text-[0.9rem] font-semibold text-ember transition-colors hover:bg-ember-soft"
+          >
+            <Trash2 size={16} />
+            Delete account
+          </button>
+        </Section>
+      </div>
+
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your posts, messages, stories and followers are removed permanently. This cannot be
+              undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep my account</AlertDialogCancel>
+            <AlertDialogAction onClick={deleteAccount} className="bg-ember text-white hover:bg-ember/90">
+              Delete everything
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
+
+const inputClass =
+  "h-11 w-full rounded-[var(--r-field)] border border-line bg-tile px-3.5 text-[0.9rem] text-ink outline-none transition-colors placeholder:text-ink-3 focus:border-glaze";
+
+function Section({
+  icon,
+  title,
+  note,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  note?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="tile p-4">
+      <div className="mb-4 flex items-center gap-2.5">
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-tile-sunk text-ink-2">
+          {icon}
+        </span>
+        <div className="min-w-0">
+          <h2 className="text-[1rem] font-semibold text-ink">{title}</h2>
+          {note && <p className="meta">{note}</p>}
         </div>
-    );
+      </div>
+      <div className="space-y-3">{children}</div>
+    </section>
+  );
+}
+
+function Field({
+  label,
+  htmlFor,
+  hint,
+  children,
+}: {
+  label: string;
+  htmlFor: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <div className="mb-1.5 flex items-baseline justify-between gap-2">
+        <label htmlFor={htmlFor} className="text-[0.82rem] font-semibold text-ink-2">
+          {label}
+        </label>
+        {hint && <span className="meta">{hint}</span>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-[var(--r-field)] px-3.5 py-2.5">
+      <span className="text-[0.875rem] text-ink-2">{label}</span>
+      <span className="min-w-0 truncate text-[0.875rem] font-medium text-ink">{value}</span>
+    </div>
+  );
 }

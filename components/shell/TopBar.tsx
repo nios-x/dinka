@@ -19,41 +19,15 @@ import { cn } from "@/lib/utils";
 export default function TopBar() {
   const pathname = usePathname() ?? "/";
   const counts = useCounts();
-  const [hidden, setHidden] = React.useState(false);
 
-  React.useEffect(() => {
-    let last = window.scrollY;
-    let frame = 0;
-
-    const onScroll = () => {
-      if (frame) return;
-      frame = requestAnimationFrame(() => {
-        frame = 0;
-        const y = window.scrollY;
-        const delta = y - last;
-        // Ignore jitter and rubber-banding at the very top.
-        if (Math.abs(delta) > 6) {
-          setHidden(delta > 0 && y > 72);
-          last = y;
-        }
-      });
-    };
-
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      if (frame) cancelAnimationFrame(frame);
-    };
-  }, []);
-
-  // The rail already carries all of this on desktop.
+  // The bar stays put rather than hiding on scroll: every interior surface
+  // sticks its own header directly beneath it, and a bar that slides away
+  // leaves those headers floating over the feed with a gap behind them.
   return (
     <header
       className={cn(
-        "frost sticky top-0 z-40 border-b border-line transition-transform duration-300 lg:hidden",
-        hidden ? "-translate-y-full" : "translate-y-0"
+        "frost sticky top-0 z-40 border-b border-line lg:hidden"
       )}
-      style={{ transitionTimingFunction: "var(--ease-out)" }}
     >
       <div className="flex h-14 items-center justify-between gap-2 px-4">
         <Link href="/" className="press flex items-center gap-2 text-ink" aria-label="Dinka home">

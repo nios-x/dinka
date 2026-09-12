@@ -1,10 +1,24 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { useSocket } from "../hooks/videosocket";
+import React, { Suspense } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Send, Paperclip, X } from "lucide-react";
+import { motion } from "framer-motion";
+import { toast } from "sonner";
+import {
+  ArrowLeft,
+  Send,
+  Paperclip,
+  X,
+  Phone,
+  Video,
+  BadgeCheck,
+  Loader2,
+  Check,
+  CheckCheck,
+} from "lucide-react";
+import { useSocket } from "../hooks/videosocket";
 import useLongPress from "../hooks/useLongPress";
 import {
   AlertDialog,
@@ -16,225 +30,339 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { toast } from "sonner";
+import { Avatar } from "@/components/ui/avatar";
+import { useCounts } from "@/app/Providers/CountsProvider";
+import { clock, dayLabel, handleOf } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
-export default function ChatPage() {
-  const searchParams = useSearchParams();
-  const toId = searchParams?.get("id");
-  const { data: session }: any = useSession();
-  const [message, setMessage] = useState("");
-  const [file, setFile] = useState<File | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [loading, setLoading] = useState(true);
-  const [selectedMessage, setSelectedMessage] = useState<any>(null);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const chatContainerRef = useRef<HTMLDivElement>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+/**
+ * A conversation.
+ *
+ * Full-height with its own header and composer — the app dock is hidden here,
+ * because a thread wants the whole screen. Messages group by day, and
+ * consecutive messages from the same person lose their repeated avatar so the
+ * thread reads as speech rather than a list of rows.
+ */
+export default function Page() {
+  return (
+    <Suspense fallback={<ThreadSkeleton />}>
+      <Thread />
+    </Suspense>
+  );
+}
 
-  const { socketMessages, send_message, setSocketMessages } = useSocket();
+function Thread() {
+  const params = useSearchParams();
+  const router = useRouter();
+  const toId = params?.get("id") ?? null;
+  const { data: session } = useSession();
+  const me = (session?.user as { id?: string } | undefined)?.id;
+  const counts = useCounts();
 
-  const currentMessages = toId ? socketMessages[toId] || [] : [];
+  const [partner, setPartner] = React.useState<any>(null);
+  const [message, setMessage] = React.useState("");
+  const [file, setFile] = React.useState<File | null>(null);
+  const [preview, setPreview] = React.useState<string | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [sending, setSending] = React.useState(false);
+  const [selected, setSelected] = React.useState<any>(null);
 
-  // 🔹 Fetch chat history
-  useEffect(() => {
+  const fileInput = React.useRef<HTMLInputElement>(null);
+  const endRef = React.useRef<HTMLDivElement>(null);
+  const { socketMessages, send_message, setSocketMessages, createCall } = useSocket();
+
+  const messages = toId ? socketMessages[toId] || [] : [];
+
+  React.useEffect(() => {
     if (!toId) return;
-    (async () => {
-      try {
-        const res = await fetch(`/api/v1/chats/getall?id=${toId}`);
-        const body = await res.json();
-        
-        if (res.ok && Array.isArray(body)) {
-          setSocketMessages((prev: any) => ({
-            ...prev,
-            [toId]: body
-          }));
-        } else {
-          console.error("Failed to fetch chats:", body.error || "Unknown error");
-        }
-      } catch (err) {
-        console.error("Failed to fetch chats:", err);
-      } finally {
-        setLoading(false);
-      }
-    })();
+    setLoading(true);
+    fetch(`/api/v1/chats/messages?id=${toId}`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!d) return;
+        setPartner(d.partner);
+        setSocketMessages((prev: any) => ({ ...prev, [toId]: d.messages ?? [] }));
+        counts.refresh();
+      })
+      .catch(() => toast.error("Could not load this conversation"))
+      .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [toId, setSocketMessages]);
 
-  // 🔹 Auto-scroll to latest
-  useEffect(() => {
-    setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, 100);
-  }, [currentMessages]);
+  React.useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: messages.length > 30 ? "auto" : "smooth" });
+  }, [messages.length]);
 
-  // 🔹 Send message
-  const handleSend = async () => {
-    if ((!message.trim() && !file) || !toId) return;
-    
+  React.useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview);
+    };
+  }, [preview]);
+
+  const send = async () => {
+    if ((!message.trim() && !file) || !toId || sending) return;
+    setSending(true);
+    const body = message;
+
     try {
-      let res;
+      let res: Response;
       if (file) {
-        const formData = new FormData();
-        formData.append("toId", toId);
-        formData.append("message", message);
-        formData.append("file", file);
-        
-        res = await fetch("/api/v1/chats/create", {
-          method: "POST",
-          body: formData,
-        });
+        const form = new FormData();
+        form.append("toId", toId);
+        form.append("message", body);
+        form.append("file", file);
+        res = await fetch("/api/v1/chats/create", { method: "POST", body: form });
       } else {
         res = await fetch("/api/v1/chats/create", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ toId, message }),
+          body: JSON.stringify({ toId, message: body }),
         });
       }
 
-      if (res.ok) {
-        const newChat = await res.json();
-        
-        const socketPayload = JSON.stringify({
-          text: message,
-          mediaUrl: newChat.message.mediaUrl
-        });
-        
-        send_message(toId, socketPayload, session?.user?.id);
+      if (!res.ok) throw new Error();
+      const created = await res.json();
 
-        setSocketMessages((prev: any) => ({
-          ...prev,
-          [toId]: [...(prev[toId] || []), newChat.message]
-        }));
-      }
-    } catch (err) {
-      console.error("Error sending message:", err);
-    } finally {
+      send_message(
+        toId,
+        JSON.stringify({ text: body, mediaUrl: created.message?.mediaUrl }),
+        me ?? ""
+      );
+      setSocketMessages((prev: any) => ({
+        ...prev,
+        [toId]: [...(prev[toId] || []), created.message],
+      }));
+
       setMessage("");
       setFile(null);
+      if (preview) URL.revokeObjectURL(preview);
+      setPreview(null);
+    } catch {
+      toast.error("Message not sent");
+    } finally {
+      setSending(false);
     }
   };
 
-  const handleDeleteMessage = async () => {
-    if (!selectedMessage || !toId) return;
-
+  const remove = async () => {
+    if (!selected || !toId) return;
+    const target = selected;
+    setSelected(null);
     try {
       const res = await fetch("/api/v1/chats/delete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chatId: selectedMessage.id }),
+        body: JSON.stringify({ chatId: target.id }),
       });
-
-      if (res.ok) {
-        setSocketMessages((prev: any) => ({
-          ...prev,
-          [toId]: prev[toId].filter((m: any) => m.id !== selectedMessage.id)
-        }));
-        toast.success("Message deleted");
-      } else {
-        const error = await res.json();
-        toast.error(error.error || "Failed to delete message");
-      }
-    } catch (err) {
-      toast.error("An error occurred");
-    } finally {
-      setIsDeleteDialogOpen(false);
-      setSelectedMessage(null);
+      if (!res.ok) throw new Error();
+      setSocketMessages((prev: any) => ({
+        ...prev,
+        [toId]: (prev[toId] ?? []).filter((m: any) => m.id !== target.id),
+      }));
+      toast.success("Deleted for you");
+    } catch {
+      toast.error("Could not delete that message");
     }
   };
 
-  if (loading)
+  if (!toId) {
     return (
-      <p className="p-4 text-center text-gray-500 dark:text-gray-400">
-        Loading chats...
-      </p>
+      <div className="grid min-h-svh place-items-center p-6 text-center">
+        <p className="text-[0.95rem] text-ink-3">
+          Pick a conversation from{" "}
+          <Link href="/chats" className="font-semibold text-glaze dark:text-teal">
+            Messages
+          </Link>
+          .
+        </p>
+      </div>
     );
+  }
+
+  if (loading) return <ThreadSkeleton />;
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-b from-slate-100 to-white dark:from-[#0a0a0f] dark:to-[#1a1a24] transition-colors duration-300">
-      {/* 💬 Messages */}
-      <div
-        ref={chatContainerRef}
-        className="flex-1 overflow-y-auto flex flex-col px-4 pb-24 pt-3 space-y-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700"
-      >
-        {currentMessages.length === 0 ? (
-          <p className="text-center text-gray-400 mt-10">
-            No messages yet 👀 — start the conversation!
-          </p>
+    <div className="flex h-svh flex-col lg:h-[100svh]">
+      <header className="frost flex shrink-0 items-center gap-2.5 border-b border-line px-2 py-2.5">
+        <button
+          type="button"
+          onClick={() => router.push("/chats")}
+          aria-label="Back to messages"
+          className="press grid h-9 w-9 shrink-0 place-items-center rounded-full text-ink-2 transition-colors hover:bg-tile-sunk"
+        >
+          <ArrowLeft size={20} />
+        </button>
+
+        <Link href={`/profile?id=${toId}`} className="flex min-w-0 flex-1 items-center gap-2.5">
+          <Avatar src={partner?.pic ?? partner?.image} name={partner?.name} userId={toId} size="md" />
+          <span className="min-w-0 leading-tight">
+            <span className="flex items-center gap-1">
+              <span className="truncate text-[0.95rem] font-semibold text-ink">
+                {partner?.name ?? "Someone"}
+              </span>
+              {partner?.isVerified && (
+                <BadgeCheck size={14} className="shrink-0 text-glaze dark:text-teal" />
+              )}
+            </span>
+            <span className="meta block truncate">@{handleOf(partner)}</span>
+          </span>
+        </Link>
+
+        <button
+          type="button"
+          onClick={() => createCall(toId)}
+          aria-label="Start a voice call"
+          className="press grid h-9 w-9 shrink-0 place-items-center rounded-full text-ink-2 transition-colors hover:bg-tile-sunk"
+        >
+          <Phone size={18} />
+        </button>
+        <button
+          type="button"
+          onClick={() => createCall(toId)}
+          aria-label="Start a video call"
+          className="press grid h-9 w-9 shrink-0 place-items-center rounded-full text-ink-2 transition-colors hover:bg-tile-sunk"
+        >
+          <Video size={18} />
+        </button>
+      </header>
+
+      <div className="flex-1 overflow-y-auto px-3 py-4">
+        {messages.length === 0 ? (
+          <div className="grid h-full place-items-center px-8 text-center">
+            <div>
+              <Avatar src={partner?.pic} name={partner?.name} userId={toId} size="3xl" />
+              <p className="mt-4 text-[1.05rem] font-semibold text-ink">
+                {partner?.name ?? "Someone"}
+              </p>
+              <p className="mt-1 text-[0.875rem] text-ink-3">
+                This is the start of your conversation. Say hello.
+              </p>
+            </div>
+          </div>
         ) : (
-          currentMessages.map((chat: any, i: number) => {
-            const isMe = chat.fromId === session?.user?.id;
-            return (
-              <ChatMessage
-                key={chat.id || `socket-${i}`}
-                chat={chat}
-                isMe={isMe}
-                onLongPress={() => {
-                  setSelectedMessage(chat);
-                  setIsDeleteDialogOpen(true);
-                }}
-              />
-            );
-          })
+          <ul className="space-y-0.5">
+            {messages.map((chat: any, i: number) => {
+              const isMe = chat.fromId === me;
+              const prev = messages[i - 1];
+              const newDay =
+                !prev || new Date(prev.createdAt).toDateString() !== new Date(chat.createdAt).toDateString();
+              // Group runs from the same sender within five minutes.
+              const grouped =
+                !newDay &&
+                prev?.fromId === chat.fromId &&
+                new Date(chat.createdAt).getTime() - new Date(prev.createdAt).getTime() < 300_000;
+
+              return (
+                <li key={chat.id ?? `live-${i}`}>
+                  {newDay && (
+                    <p className="meta py-4 text-center uppercase">{dayLabel(chat.createdAt)}</p>
+                  )}
+                  <Bubble
+                    chat={chat}
+                    isMe={isMe}
+                    grouped={grouped}
+                    onLongPress={() => isMe && setSelected(chat)}
+                  />
+                </li>
+              );
+            })}
+          </ul>
         )}
-        <div ref={messagesEndRef} />
+        <div ref={endRef} />
       </div>
 
-      {/* 📝 Input bar */}
-      <div className="fixed bottom-0 left-0 right-0 px-3 py-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-t border-gray-200 dark:border-gray-800 flex flex-col shadow-lg z-20">
-        {file && (
-          <div className="flex items-center gap-2 mb-2 p-2 bg-gray-100 dark:bg-gray-800 rounded-lg max-w-xs relative">
-            <span className="text-sm truncate flex-1">{file.name}</span>
-            <button onClick={() => setFile(null)} className="text-gray-500 hover:text-red-500">
-              <X size={16} />
+      <footer className="safe-b shrink-0 border-t border-line bg-tile px-3 py-2.5">
+        {preview && (
+          <div className="relative mb-2 inline-block">
+            {file?.type.startsWith("video") ? (
+              <video src={preview} className="h-20 rounded-[var(--r-chip)] object-cover" />
+            ) : (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img src={preview} alt="Attachment preview" className="h-20 rounded-[var(--r-chip)] object-cover" />
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setFile(null);
+                URL.revokeObjectURL(preview);
+                setPreview(null);
+              }}
+              aria-label="Remove attachment"
+              className="press absolute -right-2 -top-2 grid h-6 w-6 place-items-center rounded-full bg-ink text-ground"
+            >
+              <X size={13} />
             </button>
           </div>
         )}
-        <div className="flex items-center gap-2">
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void send();
+          }}
+          className="flex items-end gap-2"
+        >
           <input
             type="file"
             accept="image/*,video/*"
             hidden
-            ref={fileInputRef}
+            ref={fileInput}
             onChange={(e) => {
-              if (e.target.files && e.target.files[0]) {
-                setFile(e.target.files[0]);
+              const f = e.target.files?.[0];
+              if (!f) return;
+              if (f.size > 25 * 1024 * 1024) {
+                toast.error("That file is over 25MB");
+                return;
               }
+              if (preview) URL.revokeObjectURL(preview);
+              setFile(f);
+              setPreview(URL.createObjectURL(f));
             }}
           />
           <button
-            onClick={() => fileInputRef.current?.click()}
-            className="p-2 sm:p-3 bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl shadow-md hover:bg-gray-300 dark:hover:bg-gray-700 transition-all flex items-center justify-center"
+            type="button"
+            onClick={() => fileInput.current?.click()}
+            aria-label="Attach a photo or video"
+            className="press grid h-11 w-11 shrink-0 place-items-center rounded-full text-ink-2 transition-colors hover:bg-tile-sunk"
           >
-            <Paperclip size={18} />
+            <Paperclip size={19} />
           </button>
+
           <input
-            type="text"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSend()}
-            placeholder="Type a message..."
-            className="flex-1 px-4 py-2.5 text-sm sm:text-base rounded-xl border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-600 outline-none bg-gray-50 dark:bg-gray-800 dark:text-gray-100 transition-all"
+            placeholder="Message…"
+            aria-label="Your message"
+            maxLength={2000}
+            className="h-11 min-w-0 flex-1 rounded-full border border-line bg-tile-sunk px-4 text-[0.95rem] text-ink outline-none transition-colors focus:border-glaze"
           />
-          <button
-            onClick={handleSend}
-            className="p-2 sm:p-3 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 text-white rounded-xl shadow-md hover:shadow-lg hover:scale-105 transition-all flex items-center justify-center"
-          >
-            <Send size={18} />
-          </button>
-        </div>
-      </div>
 
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <button
+            type="submit"
+            disabled={(!message.trim() && !file) || sending}
+            aria-label="Send message"
+            className={cn(
+              "press grid h-11 w-11 shrink-0 place-items-center rounded-full transition-colors",
+              message.trim() || file ? "bg-glaze text-glaze-on" : "bg-tile-sunk text-ink-4"
+            )}
+          >
+            {sending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+          </button>
+        </form>
+      </footer>
+
+      <AlertDialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Message?</AlertDialogTitle>
+            <AlertDialogTitle>Delete this message?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this message? This only removes it for you.
+              It disappears from your side of the conversation. The other person keeps their copy.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteMessage} className="bg-red-500 hover:bg-red-600 font-extrabold text-white">
-              Delete
+            <AlertDialogCancel>Keep it</AlertDialogCancel>
+            <AlertDialogAction onClick={remove} className="bg-ember text-white hover:bg-ember/90">
+              Delete for me
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -243,36 +371,90 @@ export default function ChatPage() {
   );
 }
 
-function ChatMessage({ chat, isMe, onLongPress }: any) {
-  const longPressProps = useLongPress({
-    onLongPress,
-    delay: 500
-  });
+function Bubble({
+  chat,
+  isMe,
+  grouped,
+  onLongPress,
+}: {
+  chat: any;
+  isMe: boolean;
+  grouped: boolean;
+  onLongPress: () => void;
+}) {
+  const longPress = useLongPress({ onLongPress, delay: 450 });
+  const isVideo = chat.mediaUrl?.includes("/video/") || /\.(mp4|webm|mov)(\?|$)/i.test(chat.mediaUrl ?? "");
 
-  const isVideo = chat.mediaUrl && chat.mediaUrl.includes("/video/");
+  if (chat.type === "Call" || chat.type === "VideoCall") {
+    return (
+      <p className="meta py-2 text-center">
+        {isMe ? "You started" : "They started"} a {chat.type === "VideoCall" ? "video" : "voice"} call
+        · {clock(chat.createdAt)}
+      </p>
+    );
+  }
 
   return (
-    <div
-      className={`flex w-full ${isMe ? "justify-end" : "justify-start"}`}
-      {...longPressProps}
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+      className={cn("flex w-full", isMe ? "justify-end" : "justify-start", grouped ? "mt-0.5" : "mt-2.5")}
+      {...longPress}
     >
       <div
-        className={`relative break-words px-4 py-2 rounded-2xl text-sm sm:text-base max-w-[75%] shadow-md animate-fadeIn cursor-pointer transition-transform active:scale-95 select-none
-          ${isMe
-            ? "bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500 text-white rounded-tr-none"
-            : "bg-gradient-to-br from-gray-200 to-gray-100 dark:from-gray-700 dark:to-gray-800 dark:text-gray-100 rounded-tl-none"
-          }`}
+        className={cn(
+          "group relative max-w-[78%] select-none overflow-hidden px-3.5 py-2 text-[0.925rem] leading-relaxed sm:max-w-[68%]",
+          isMe
+            ? "rounded-[18px] bg-glaze text-glaze-on"
+            : "rounded-[18px] border border-line bg-tile text-ink",
+          // The tail corner marks who is speaking without drawing a tail.
+          !grouped && (isMe ? "rounded-br-[6px]" : "rounded-bl-[6px]")
+        )}
       >
         {chat.mediaUrl && (
-          <div className="mb-2">
+          <div className="-mx-3.5 -mt-2 mb-2">
             {isVideo ? (
-              <video src={chat.mediaUrl} controls className="max-w-full rounded-lg max-h-64 object-cover" />
+              <video src={chat.mediaUrl} controls playsInline className="max-h-72 w-full object-cover" />
             ) : (
-              <img src={chat.mediaUrl} alt="attachment" className="max-w-full rounded-lg max-h-64 object-cover" />
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img src={chat.mediaUrl} alt="Attachment" className="max-h-72 w-full object-cover" />
             )}
           </div>
         )}
-        {chat.message && <div>{chat.message}</div>}
+
+        {chat.message && <p className="whitespace-pre-wrap break-words">{chat.message}</p>}
+
+        <span
+          className={cn(
+            "mt-0.5 flex items-center justify-end gap-1 text-[0.65rem] tabular-nums",
+            isMe ? "text-glaze-on/65" : "text-ink-4"
+          )}
+        >
+          {clock(chat.createdAt)}
+          {isMe && (chat.isSeen ? <CheckCheck size={12} /> : <Check size={12} />)}
+        </span>
+      </div>
+    </motion.div>
+  );
+}
+
+function ThreadSkeleton() {
+  return (
+    <div className="flex h-svh flex-col">
+      <div className="flex items-center gap-3 border-b border-line px-4 py-3">
+        <div className="skeleton h-10 w-10 rounded-full" />
+        <div className="space-y-2">
+          <div className="skeleton h-3.5 w-32 rounded-full" />
+          <div className="skeleton h-2.5 w-20 rounded-full" />
+        </div>
+      </div>
+      <div className="flex-1 space-y-3 p-4">
+        {[70, 45, 60, 38, 55].map((w, i) => (
+          <div key={i} className={cn("flex", i % 2 ? "justify-end" : "justify-start")}>
+            <div className="skeleton h-9 rounded-[18px]" style={{ width: `${w}%` }} />
+          </div>
+        ))}
       </div>
     </div>
   );
