@@ -453,6 +453,28 @@
     }
   }
 
+  /* Asking the system for less transparency is asking for this: solid panels,
+     no blur. It also drops every backdrop-filter layer, which is the expensive
+     part of this design on a weak GPU. */
+  @media (prefers-reduced-transparency: reduce) {
+    .glass,
+    .tile,
+    .tile-raised,
+    .stat,
+    .frost-tile {
+      background-color: var(--tile);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+
+    .frost,
+    .glass-bar {
+      background-color: var(--ground);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+  }
+
   /* Immersive media surfaces — calls, stories, reels. Dark in both themes,
      because a photograph is graded for a dark surround. */
   .stage {

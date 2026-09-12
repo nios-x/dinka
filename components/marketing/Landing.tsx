@@ -38,21 +38,22 @@ export default function Landing() {
             <span className="wordmark text-[2rem] leading-none">dinka</span>
           </Link>
 
-          <nav className="flex items-center gap-2">
+          {/* At 390px all four controls have to fit beside the wordmark, so the
+              primary action shortens rather than wrapping. */}
+          <nav className="flex items-center gap-1 sm:gap-2">
             <ThemeSwitch />
-            {/* Returning users are most of the traffic a sign-in page gets, so
-                this stays reachable at phone width too. */}
             <Link
               href="/login"
-              className="press rounded-full px-3 py-2 text-[0.875rem] font-semibold text-ink-2 transition-colors hover:text-ink sm:px-4"
+              className="press whitespace-nowrap rounded-full px-2.5 py-2 text-[0.875rem] font-semibold text-ink-2 transition-colors hover:text-ink sm:px-4"
             >
               Sign in
             </Link>
             <Link
               href="/signup"
-              className="press rounded-full bg-glaze px-4 py-2 text-[0.875rem] font-semibold text-glaze-on transition-colors hover:bg-glaze-hover"
+              className="press whitespace-nowrap rounded-full bg-glaze px-3.5 py-2 text-[0.875rem] font-semibold text-glaze-on transition-colors hover:bg-glaze-hover sm:px-4"
             >
-              Create account
+              <span className="sm:hidden">Sign up</span>
+              <span className="hidden sm:inline">Create account</span>
             </Link>
           </nav>
         </div>

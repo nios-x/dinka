@@ -80,7 +80,7 @@ export default function Page() {
   };
 
   return (
-    <div className="fixed inset-0 z-[60] bg-black lg:relative lg:inset-auto lg:z-auto lg:h-svh">
+    <div className="stage fixed inset-0 z-[60] lg:relative lg:inset-auto lg:z-auto lg:h-svh">
       <button
         type="button"
         onClick={() => router.back()}

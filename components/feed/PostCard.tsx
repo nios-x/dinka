@@ -258,7 +258,9 @@ export default function PostCard({
         </header>
 
         {post.title && (
-          <div className="px-4 pb-3">
+          // The card is clickable, but its words are still words: the caret
+          // over the body says the text can be selected.
+          <div className="cursor-text px-4 pb-3">
             {detail ? (
               <RichText className="text-[1.05rem] leading-[1.6] text-ink">{post.title}</RichText>
             ) : (

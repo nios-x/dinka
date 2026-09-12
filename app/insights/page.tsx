@@ -2,16 +2,8 @@
 
 import React from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useTheme } from "next-themes";
-import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 import { ArrowDownRight, ArrowUpRight, BarChart3, Table2, Minus } from "lucide-react";
 import PageHeader from "@/components/shell/PageHeader";
 import EmptyState from "@/components/ui/empty-state";
@@ -58,6 +50,14 @@ type Insights = {
     rate: number;
   }[];
 };
+
+/* The charting library is a third of this route's JavaScript. It loads when a
+   chart is actually drawn, so the table view and a brand-new account with
+   nothing to plot never pay for it. */
+const EngagementChart = dynamic(() => import("@/components/insights/EngagementChart"), {
+  ssr: false,
+  loading: () => <div className="skeleton h-56 w-full rounded-[var(--r-field)]" />,
+});
 
 const RANGES = [7, 30, 90] as const;
 
@@ -195,63 +195,7 @@ export default function Page() {
                 No reactions or comments in this period yet.
               </p>
             ) : view === "chart" ? (
-              <div className="h-56 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={data.series} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
-                    <defs>
-                      {SERIES.map((s) => (
-                        <linearGradient key={s.key} id={`fill-${s.key}`} x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor={colorOf(s)} stopOpacity={0.34} />
-                          <stop offset="100%" stopColor={colorOf(s)} stopOpacity={0.04} />
-                        </linearGradient>
-                      ))}
-                    </defs>
-
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      vertical={false}
-                      stroke="var(--line)"
-                    />
-                    <XAxis
-                      dataKey="date"
-                      tickLine={false}
-                      axisLine={false}
-                      tickMargin={8}
-                      minTickGap={28}
-                      tick={{ fill: "var(--ink-3)", fontSize: 10 }}
-                      tickFormatter={(d: string) =>
-                        new Date(d).toLocaleDateString(undefined, { month: "short", day: "numeric" })
-                      }
-                    />
-                    <YAxis
-                      tickLine={false}
-                      axisLine={false}
-                      width={44}
-                      allowDecimals={false}
-                      tick={{ fill: "var(--ink-3)", fontSize: 10 }}
-                    />
-                    <Tooltip
-                      cursor={{ stroke: "var(--line-strong)", strokeWidth: 1 }}
-                      content={<ChartTooltip colorOf={colorOf} />}
-                    />
-
-                    {/* Stacked: both series are engagements, so they sum. */}
-                    {SERIES.map((s) => (
-                      <Area
-                        key={s.key}
-                        type="monotone"
-                        dataKey={s.key}
-                        name={s.label}
-                        stackId="engagement"
-                        stroke={colorOf(s)}
-                        strokeWidth={2}
-                        fill={`url(#fill-${s.key})`}
-                        activeDot={{ r: 4.5, strokeWidth: 2, stroke: "var(--tile)" }}
-                      />
-                    ))}
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
+              <EngagementChart data={data.series} series={SERIES} colorOf={colorOf} />
             ) : (
               <div className="max-h-56 overflow-auto">
                 <table className="w-full text-left text-[0.82rem]">
@@ -380,42 +324,3 @@ function Stat({
   );
 }
 
-function ChartTooltip({
-  active,
-  payload,
-  label,
-  colorOf,
-}: any) {
-  if (!active || !payload?.length) return null;
-  const total = payload.reduce((sum: number, p: any) => sum + (p.value ?? 0), 0);
-
-  return (
-    <div className="rounded-[var(--r-field)] border border-line bg-tile-raised p-2.5 shadow-[var(--shadow-lg)]">
-      <p className="mb-1.5 text-[0.75rem] font-semibold text-ink">
-        {new Date(label).toLocaleDateString(undefined, {
-          weekday: "short",
-          month: "short",
-          day: "numeric",
-        })}
-      </p>
-      {payload.map((p: any) => {
-        const s = SERIES.find((x) => x.key === p.dataKey);
-        return (
-          <p key={p.dataKey} className="flex items-center gap-2 text-[0.75rem]">
-            <span
-              className="h-2 w-2 rounded-full"
-              style={{ background: s ? colorOf(s) : p.color }}
-              aria-hidden
-            />
-            <span className="flex-1 text-ink-2">{p.name}</span>
-            <span className="font-bold tabular-nums text-ink">{p.value}</span>
-          </p>
-        );
-      })}
-      <p className="mt-1.5 flex items-center gap-2 border-t border-line pt-1.5 text-[0.75rem]">
-        <span className="flex-1 font-medium text-ink-2">Total</span>
-        <span className="font-bold tabular-nums text-ink">{total}</span>
-      </p>
-    </div>
-  );
-}

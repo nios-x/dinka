@@ -6,11 +6,25 @@ import { signIn, signOut, useSession } from "next-auth/react";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import dinkaconfig from "@/dinka-config";
+import { useSearchParams } from "next/navigation";
 
-/** Sign-in: Google, or email and password. */
+/**
+ * Sign-in: Google, or email and password.
+ *
+ * `?next=` is honoured. A shared post link sends a signed-out visitor here with
+ * the post in that parameter, and landing them on the generic feed afterwards
+ * loses whatever they actually clicked. Only same-origin paths are accepted, so
+ * the parameter cannot be used to bounce someone off the site.
+ */
+function safeNext(raw: string | null | undefined): string {
+  if (!raw) return "/";
+  return raw.startsWith("/") && !raw.startsWith("//") ? raw : "/";
+}
+
 export function LoginForm({ className }: { className?: string }) {
   const { data: session } = useSession();
+  const params = useSearchParams();
+  const next = safeNext(params?.get("next"));
   const [credentials, setCredentials] = React.useState({ email: "", password: "" });
   const [show, setShow] = React.useState(false);
   const [busy, setBusy] = React.useState<"google" | "email" | null>(null);
@@ -56,7 +70,7 @@ export function LoginForm({ className }: { className?: string }) {
       toast.error("That email and password don’t match an account");
       return;
     }
-    window.location.href = "/";
+    window.location.href = next;
   };
 
   return (
@@ -65,7 +79,7 @@ export function LoginForm({ className }: { className?: string }) {
         type="button"
         onClick={() => {
           setBusy("google");
-          signIn("google", { callbackUrl: "/" });
+          signIn("google", { callbackUrl: next });
         }}
         disabled={busy !== null}
         className="press flex h-12 items-center justify-center gap-2.5 rounded-full border border-line bg-tile text-[0.925rem] font-semibold text-ink transition-colors hover:border-line-strong disabled:opacity-60"
@@ -102,17 +116,12 @@ export function LoginForm({ className }: { className?: string }) {
         </div>
 
         <div>
-          <div className="mb-1.5 flex items-baseline justify-between gap-2">
-            <label htmlFor="password" className="text-[0.82rem] font-semibold text-ink-2">
-              Password
-            </label>
-            <Link
-              href={`/${dinkaconfig.links["forgot-your-password"]}`}
-              className="text-[0.78rem] font-medium text-glaze hover:underline dark:text-teal"
-            >
-              Forgot it?
-            </Link>
-          </div>
+          {/* There is no password-reset route behind the product yet, and a
+              "Forgot it?" link that 404s is worse than no link at all. Restore
+              this the moment a reset flow exists. */}
+          <label htmlFor="password" className="mb-1.5 block text-[0.82rem] font-semibold text-ink-2">
+            Password
+          </label>
           <div className="relative">
             <input
               id="password"

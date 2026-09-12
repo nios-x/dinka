@@ -273,10 +273,15 @@ export default function Comments({
         </ul>
       )}
 
-      {/* Composer — sticky above the dock so it is always reachable. */}
+      {/* Composer — always reachable.
+
+          On a phone the dock floats over the bottom of the viewport, so this
+          parks above it rather than underneath: sticking at bottom-0 here put
+          the comment field behind the dock's pill. On desktop there is no dock
+          and it sits on the bottom edge. */}
       <form
         onSubmit={send}
-        className="safe-b sticky bottom-0 z-20 mt-3 border-t border-line bg-tile/90 px-3 py-2.5 backdrop-blur-xl"
+        className="safe-b sticky bottom-[5.25rem] z-20 mt-3 rounded-[var(--r-sheet)] border border-line bg-tile/90 px-3 py-2.5 backdrop-blur-xl lg:bottom-0 lg:rounded-none lg:border-x-0 lg:border-b-0"
       >
         {replyTo && (
           <div className="mb-2 flex items-center justify-between gap-2 rounded-full bg-tile-sunk px-3 py-1.5">
