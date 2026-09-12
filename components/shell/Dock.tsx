@@ -31,10 +31,10 @@ export default function Dock() {
   const right = DOCK_ITEMS.slice(2);
 
   return (
-    <div className="safe-b pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center pb-3 lg:hidden">
+    <div className="safe-b pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center pb-5 lg:hidden">
       <nav
         aria-label="Primary"
-        className="frost-tile pointer-events-auto flex items-center gap-0.5 rounded-full border border-line p-1.5 shadow-[var(--shadow-lg)]"
+        className="frost-tile pointer-events-auto flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 shadow-[var(--shadow-lg)]"
       >
         {left.map((item) => (
           <DockLink
