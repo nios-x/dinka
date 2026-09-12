@@ -228,7 +228,9 @@ export function LoginForm({ className }: { className?: string }) {
               minLength={8}
               value={credentials.password}
               onChange={(e) => setCredentials((c) => ({ ...c, password: e.target.value }))}
-              placeholder="At least 8 characters"
+              placeholder="Choose a password"
+              aria-describedby="password-rule"
+              aria-invalid={!!credentials.password && credentials.password.length < 8}
               className={cn(fieldClass, "pr-12")}
             />
             <button
@@ -240,15 +242,21 @@ export function LoginForm({ className }: { className?: string }) {
               {show ? <EyeOff size={17} /> : <Eye size={17} />}
             </button>
           </div>
+          {/* The rule lives here rather than in the placeholder, which vanishes
+              the moment it is needed. It counts down as you type. */}
           <p
+            id="password-rule"
+            aria-live="polite"
             className={cn(
               "mt-1.5 text-[0.75rem]",
               credentials.password && credentials.password.length < 8 ? "text-ember" : "text-ink-3"
             )}
           >
             {credentials.password && credentials.password.length < 8
-              ? `${8 - credentials.password.length} more characters needed`
-              : "8 characters minimum"}
+              ? `${8 - credentials.password.length} more ${
+                  8 - credentials.password.length === 1 ? "character" : "characters"
+                } needed`
+              : "At least 8 characters"}
           </p>
         </div>
 

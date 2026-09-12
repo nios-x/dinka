@@ -4,7 +4,19 @@ import * as React from "react"
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog"
 
 import { cn } from "@/lib/utils"
-import { buttonVariants } from "@/components/ui/button"
+
+/**
+ * Confirmation dialogs.
+ *
+ * Radix supplies the behaviour — focus trap, Escape, scroll lock, the
+ * alertdialog role — and this file supplies Dinka's surface: the sheet corner,
+ * the raised tile, a display-face title and pill actions, so a destructive
+ * confirmation looks like the rest of the product rather than a stock kit.
+ *
+ * The action is deliberately not destructive by default; the two places that
+ * delete something pass the ember fill themselves, so an `AlertDialog` used for
+ * an ordinary confirmation does not shout.
+ */
 
 function AlertDialog({
   ...props
@@ -36,7 +48,9 @@ function AlertDialogOverlay({
     <AlertDialogPrimitive.Overlay
       data-slot="alert-dialog-overlay"
       className={cn(
-        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/50",
+        "fixed inset-0 z-50 bg-[rgb(23_19_15_/_0.45)] backdrop-blur-[3px]",
+        "data-[state=open]:animate-in data-[state=open]:fade-in-0",
+        "data-[state=closed]:animate-out data-[state=closed]:fade-out-0",
         className
       )}
       {...props}
@@ -54,7 +68,10 @@ function AlertDialogContent({
       <AlertDialogPrimitive.Content
         data-slot="alert-dialog-content"
         className={cn(
-          "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg",
+          "fixed left-1/2 top-1/2 z-50 grid w-[calc(100%-2rem)] max-w-[26rem] -translate-x-1/2 -translate-y-1/2 gap-1.5",
+          "rounded-[var(--r-sheet)] border border-line bg-tile-raised p-6 shadow-[var(--shadow-xl)]",
+          "duration-200 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
+          "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",
           className
         )}
         {...props}
@@ -63,28 +80,23 @@ function AlertDialogContent({
   )
 }
 
-function AlertDialogHeader({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
+function AlertDialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="alert-dialog-header"
-      className={cn("flex flex-col gap-2 text-center sm:text-left", className)}
+      className={cn("flex flex-col gap-2", className)}
       {...props}
     />
   )
 }
 
-function AlertDialogFooter({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
+/** Stacked on a phone with the confirming action on top, side by side above it. */
+function AlertDialogFooter({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="alert-dialog-footer"
       className={cn(
-        "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
+        "mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
         className
       )}
       {...props}
@@ -99,7 +111,10 @@ function AlertDialogTitle({
   return (
     <AlertDialogPrimitive.Title
       data-slot="alert-dialog-title"
-      className={cn("text-lg font-semibold", className)}
+      className={cn(
+        "font-display text-[1.2rem] font-bold tracking-[-0.02em] text-ink",
+        className
+      )}
       {...props}
     />
   )
@@ -112,11 +127,14 @@ function AlertDialogDescription({
   return (
     <AlertDialogPrimitive.Description
       data-slot="alert-dialog-description"
-      className={cn("text-muted-foreground text-sm", className)}
+      className={cn("text-[0.9rem] leading-relaxed text-ink-2", className)}
       {...props}
     />
   )
 }
+
+const ACTION_BASE =
+  "press inline-flex h-11 items-center justify-center rounded-full px-5 text-[0.875rem] font-semibold transition-colors disabled:pointer-events-none disabled:opacity-50 sm:h-10"
 
 function AlertDialogAction({
   className,
@@ -124,7 +142,11 @@ function AlertDialogAction({
 }: React.ComponentProps<typeof AlertDialogPrimitive.Action>) {
   return (
     <AlertDialogPrimitive.Action
-      className={cn(buttonVariants(), className)}
+      className={cn(
+        ACTION_BASE,
+        "bg-glaze text-glaze-on hover:bg-glaze-hover",
+        className
+      )}
       {...props}
     />
   )
@@ -136,7 +158,11 @@ function AlertDialogCancel({
 }: React.ComponentProps<typeof AlertDialogPrimitive.Cancel>) {
   return (
     <AlertDialogPrimitive.Cancel
-      className={cn(buttonVariants({ variant: "outline" }), className)}
+      className={cn(
+        ACTION_BASE,
+        "border border-line text-ink hover:border-line-strong hover:bg-tile-sunk",
+        className
+      )}
       {...props}
     />
   )

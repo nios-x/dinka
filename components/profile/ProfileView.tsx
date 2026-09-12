@@ -468,7 +468,7 @@ export function ProfileSkeleton() {
             className="-mt-16 rounded-full ring-4"
             style={{ ["--tw-ring-color" as never]: "var(--ground)" }}
           >
-            <div className="skeleton h-[104px] w-[104px] rounded-full" />
+            <div className="skeleton h-[88px] w-[88px] rounded-full" />
           </div>
           <div className="flex gap-2 pb-0.5">
             <div className="skeleton h-10 w-10 rounded-full" />

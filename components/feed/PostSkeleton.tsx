@@ -1,12 +1,13 @@
 import React from "react";
 
 /**
- * Feed placeholder. It mirrors the real card's geometry — same avatar size,
- * same padding, same media ratio — so content does not jump when it lands.
+ * Feed placeholder. It mirrors the real card's geometry — same gutter, same
+ * corner, same avatar size, same padding, same media ratio — so nothing shifts
+ * when the posts land.
  */
 export default function PostSkeleton({ media = true }: { media?: boolean }) {
   return (
-    <div className="border-b border-line bg-tile p-4 sm:mb-3 sm:rounded-[var(--r-tile)] sm:border">
+    <div className="card mb-3 p-4">
       <div className="flex items-center gap-3">
         <div className="skeleton h-12 w-12 rounded-full" />
         <div className="flex-1 space-y-2">
@@ -32,9 +33,10 @@ export default function PostSkeleton({ media = true }: { media?: boolean }) {
   );
 }
 
+/** The gutter matches Feed's, so the switch from placeholder to posts is still. */
 export function FeedSkeleton({ count = 3 }: { count?: number }) {
   return (
-    <div aria-busy="true" aria-live="polite">
+    <div className="px-3 pt-3" aria-busy="true" aria-live="polite">
       <span className="sr-only">Loading posts…</span>
       {Array.from({ length: count }).map((_, i) => (
         <PostSkeleton key={i} media={i % 2 === 0} />

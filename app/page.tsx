@@ -45,13 +45,7 @@ export default function Page() {
     }
   }, [status]);
 
-  if (status === "loading") {
-    return (
-      <div className="sm:px-3 sm:pt-4">
-        <FeedSkeleton count={3} />
-      </div>
-    );
-  }
+  if (status === "loading") return <FeedSkeleton count={3} />;
 
   if (status !== "authenticated") return <Landing />;
 

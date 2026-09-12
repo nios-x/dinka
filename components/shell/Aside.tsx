@@ -117,7 +117,7 @@ export default function Aside() {
                   type="button"
                   onClick={() => follow(p)}
                   disabled={pending[p.id]}
-                  className="press shrink-0 rounded-full bg-ink px-3.5 py-1.5 text-xs font-semibold text-ground transition-opacity disabled:opacity-50"
+                  className="press shrink-0 rounded-full bg-glaze px-3.5 py-1.5 text-xs font-semibold text-glaze-on transition-colors hover:bg-glaze-hover disabled:opacity-50"
                 >
                   {pending[p.id] ? "…" : "Follow"}
                 </button>

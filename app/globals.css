@@ -458,6 +458,11 @@
   .stage {
     background-color: var(--stage);
     color: var(--stage-ink);
+    /* The stage is its own colour context. The surface under these accents
+       never changes, so neither do they — a hang-up button that shifts red
+       when the app theme flips is a tell that the token was borrowed. */
+    --ember: #e0463c;
+    --teal: #12b39f;
   }
 
   /* A second sticky row on a surface that already has a PageHeader: profile

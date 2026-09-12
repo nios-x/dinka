@@ -162,7 +162,7 @@ export default function StoryViewer({
   return createPortal(
     <AnimatePresence>
       <motion.div
-        className="fixed inset-0 z-[90] flex items-center justify-center bg-[#08070a]"
+        className="fixed inset-0 z-[90] flex items-center justify-center stage"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}

@@ -249,7 +249,7 @@ export function CallScreen({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
-      className="fixed inset-0 z-[100] flex h-[100dvh] w-screen flex-col bg-[#08070a] [&:fullscreen]:h-full [&:fullscreen]:w-full"
+      className="fixed inset-0 z-[100] flex h-[100dvh] w-screen flex-col stage [&:fullscreen]:h-full [&:fullscreen]:w-full"
       role="dialog"
       aria-modal="true"
       aria-label={`Call with ${peer?.name ?? "someone"}`}
@@ -356,7 +356,7 @@ export function CallScreen({
             )}
 
             {!micOn && (
-              <span className="absolute bottom-1.5 right-1.5 grid h-6 w-6 place-items-center rounded-full bg-[#e0463c] text-white">
+              <span className="absolute bottom-1.5 right-1.5 grid h-6 w-6 place-items-center rounded-full bg-ember text-white">
                 <MicOff size={12} />
               </span>
             )}
@@ -369,7 +369,7 @@ export function CallScreen({
       </div>
 
       {/* Controls */}
-      <div className="safe-b flex shrink-0 items-center justify-center gap-4 bg-[#08070a] px-6 py-7">
+      <div className="safe-b flex shrink-0 items-center justify-center gap-4 stage px-6 py-7">
         <ControlButton
           label={micOn ? "Mute your microphone" : "Unmute your microphone"}
           onClick={onToggleMic}
@@ -382,7 +382,7 @@ export function CallScreen({
           type="button"
           onClick={onEnd}
           aria-label="End call"
-          className="press grid h-16 w-24 place-items-center rounded-full bg-[#e0463c] text-white shadow-[0_8px_28px_-6px_rgba(224,70,60,0.7)] transition-colors hover:bg-[#c9382f]"
+          className="press grid h-16 w-24 place-items-center rounded-full bg-ember text-white shadow-[0_8px_28px_-6px_rgba(224,70,60,0.7)] transition-colors hover:brightness-90"
         >
           <PhoneOff size={25} />
         </button>
@@ -420,7 +420,7 @@ function ControlButton({
       aria-pressed={active}
       className={cn(
         "press grid h-14 w-14 place-items-center rounded-full transition-colors",
-        active ? "bg-white text-[#08070a]" : "bg-white/12 text-white hover:bg-white/20"
+        active ? "bg-white text-stage" : "bg-white/12 text-white hover:bg-white/20"
       )}
     >
       {children}
@@ -473,7 +473,7 @@ export function IncomingCall({
                 type="button"
                 onClick={onDecline}
                 aria-label="Decline call"
-                className="press grid h-16 w-16 place-items-center rounded-full bg-[#e0463c] text-white shadow-[0_8px_24px_-8px_rgba(224,70,60,0.7)]"
+                className="press grid h-16 w-16 place-items-center rounded-full bg-ember text-white shadow-[0_8px_24px_-8px_rgba(224,70,60,0.7)]"
               >
                 <PhoneOff size={24} />
               </button>
@@ -485,7 +485,7 @@ export function IncomingCall({
                 type="button"
                 onClick={onAccept}
                 aria-label="Accept call"
-                className="press grid h-16 w-16 place-items-center rounded-full bg-[#12b39f] text-white shadow-[0_8px_24px_-8px_rgba(18,179,159,0.7)]"
+                className="press grid h-16 w-16 place-items-center rounded-full bg-teal text-white shadow-[0_8px_24px_-8px_rgba(18,179,159,0.7)]"
               >
                 <Phone size={24} />
               </button>

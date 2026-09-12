@@ -94,7 +94,7 @@ export default function StoryComposer({
 
   return createPortal(
     <motion.div
-      className="fixed inset-0 z-[90] flex flex-col bg-[#08070a]"
+      className="fixed inset-0 z-[90] flex flex-col stage"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.2 }}
@@ -175,7 +175,7 @@ export default function StoryComposer({
                 aria-label={`${grad.label} background`}
                 aria-pressed={i === gradient}
                 className={cn(
-                  "press h-8 w-8 rounded-full ring-2 ring-offset-2 ring-offset-[#08070a] transition-all",
+                  "press h-8 w-8 rounded-full ring-2 ring-offset-2 ring-offset-stage transition-all",
                   i === gradient ? "ring-white" : "ring-transparent"
                 )}
                 style={{ background: `linear-gradient(155deg, ${grad.from}, ${grad.to})` }}

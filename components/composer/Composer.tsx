@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { extractTags } from "@/lib/richtext";
 import { usePostContext } from "@/app/Providers/PostsProvider";
 import { onComposer, type ComposerIntent } from "./composer-bus";
+import { useDialog } from "@/lib/use-dialog";
 import { PollIcon } from "@/components/icons";
 import {
   DropdownMenu,
@@ -59,6 +60,7 @@ export default function Composer() {
   const [posting, setPosting] = React.useState(false);
 
   const textRef = React.useRef<HTMLTextAreaElement>(null);
+  const panelRef = React.useRef<HTMLDivElement>(null);
   const me = session?.user as { id?: string; name?: string | null; image?: string | null } | undefined;
 
   React.useEffect(() => setMounted(true), []);
@@ -75,15 +77,6 @@ export default function Composer() {
       }),
     []
   );
-
-  React.useEffect(() => {
-    if (!open) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [open]);
 
   React.useEffect(() => {
     return () => {
@@ -117,6 +110,9 @@ export default function Composer() {
     // Keep the draft if there is one; clear a finished or untouched composer.
     if (!body.trim() && !file) reset();
   };
+
+  // Escape, focus trapping, focus restoration and the scroll lock.
+  useDialog(open, close, panelRef);
 
   const pick = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -205,6 +201,7 @@ export default function Composer() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: "100%", opacity: 0.6 }}
             transition={{ type: "spring", stiffness: 340, damping: 36 }}
+            ref={panelRef}
             className="relative flex max-h-[92svh] w-full flex-col overflow-hidden rounded-t-[var(--r-sheet)] border border-line bg-tile-raised shadow-[var(--shadow-xl)] sm:max-h-[84svh] sm:w-[min(94vw,588px)] sm:rounded-[var(--r-sheet)]"
           >
             <header className="flex items-center justify-between border-b border-line px-3 py-2.5">

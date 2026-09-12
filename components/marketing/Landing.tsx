@@ -14,15 +14,19 @@ import { DinkaMark, InsightsIcon, MessagesIcon, ExploreIcon, BookmarkIcon } from
  * It shows the product rather than describing it: the three phone frames are
  * the real components at phone width, not screenshots. No user counts, logos or
  * testimonials appear anywhere — none of those exist yet, so none are claimed.
+ *
+ * Motion is deliberately sparse. One reveal per section, on the section — not
+ * on every heading, card and list item inside it. A page where each element
+ * arrives separately reads as a page that is still loading.
  */
 export default function Landing() {
   const reduce = useReducedMotion();
 
   const rise = (delay = 0) => ({
-    initial: reduce ? {} : { opacity: 0, y: 22 },
+    initial: reduce ? {} : { opacity: 0, y: 18 },
     whileInView: reduce ? {} : { opacity: 1, y: 0 },
-    viewport: { once: true, margin: "-80px" },
-    transition: { duration: 0.6, delay, ease: [0.16, 1, 0.3, 1] as const },
+    viewport: { once: true, margin: "-100px" },
+    transition: { duration: 0.5, delay, ease: [0.16, 1, 0.3, 1] as const },
   });
 
   return (
@@ -36,9 +40,11 @@ export default function Landing() {
 
           <nav className="flex items-center gap-2">
             <ThemeSwitch />
+            {/* Returning users are most of the traffic a sign-in page gets, so
+                this stays reachable at phone width too. */}
             <Link
               href="/login"
-              className="press hidden rounded-full px-4 py-2 text-[0.875rem] font-semibold text-ink-2 transition-colors hover:text-ink sm:block"
+              className="press rounded-full px-3 py-2 text-[0.875rem] font-semibold text-ink-2 transition-colors hover:text-ink sm:px-4"
             >
               Sign in
             </Link>
@@ -104,10 +110,10 @@ export default function Landing() {
       </section>
 
       {/* ── What you get ───────────────────────────────────────────────── */}
-      <section className="mx-auto w-full max-w-6xl px-5 py-20">
-        <motion.h2 {...rise()} className="max-w-[20ch] text-[1.9rem] font-bold tracking-[-0.03em] text-ink sm:text-[2.6rem]">
+      <motion.section {...rise()} className="mx-auto w-full max-w-6xl px-5 py-20">
+        <h2 className="max-w-[20ch] text-[1.9rem] font-bold tracking-[-0.03em] text-ink sm:text-[2.6rem]">
           Everything you expect, and the part nobody gives you.
-        </motion.h2>
+        </h2>
 
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
@@ -132,10 +138,9 @@ export default function Landing() {
               body: "Reach, engagement rate and your best posts. Attached to your normal account, not an upgrade.",
               highlight: true,
             },
-          ].map((f, i) => (
-            <motion.article
+          ].map((f) => (
+            <article
               key={f.title}
-              {...rise(0.06 * i)}
               className={
                 f.highlight
                   ? "rounded-[var(--r-tile)] bg-glaze p-6 text-glaze-on"
@@ -158,10 +163,10 @@ export default function Landing() {
               >
                 {f.body}
               </p>
-            </motion.article>
+            </article>
           ))}
         </div>
-      </section>
+      </motion.section>
 
       {/* ── The position ───────────────────────────────────────────────── */}
       <section className="border-y border-line bg-tile">

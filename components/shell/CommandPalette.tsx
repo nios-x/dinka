@@ -8,6 +8,7 @@ import { Search, Hash, FileText, ArrowRight, Loader2 } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { compact, handleOf, shortAgo } from "@/lib/format";
 import { onPalette, openComposer } from "@/components/composer/composer-bus";
+import { useDialog } from "@/lib/use-dialog";
 import {
   HomeIcon,
   ExploreIcon,
@@ -47,6 +48,12 @@ export default function CommandPalette() {
   const [results, setResults] = React.useState<Results>(EMPTY);
   const [loading, setLoading] = React.useState(false);
   const router = useRouter();
+  const panelRef = React.useRef<HTMLDivElement>(null);
+
+  const close = () => setOpen(false);
+
+  // cmdk only supplies Escape inside its own Dialog wrapper, which this is not.
+  useDialog(open, close, panelRef);
 
   React.useEffect(() => onPalette((q) => {
     setQuery(q ?? "");
@@ -114,10 +121,14 @@ export default function CommandPalette() {
           <button
             aria-label="Close search"
             className="absolute inset-0 bg-[rgb(34_26_21_/_0.32)] backdrop-blur-[3px]"
-            onClick={() => setOpen(false)}
+            onClick={close}
           />
 
           <motion.div
+            ref={panelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Search Dinka"
             initial={{ opacity: 0, y: -12, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.985 }}

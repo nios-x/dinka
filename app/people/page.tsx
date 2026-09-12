@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { UserPlus } from "lucide-react";
@@ -27,8 +28,21 @@ const TABS = [
 
 type TabKey = (typeof TABS)[number]["key"];
 
+const isTabKey = (v: string | null): v is TabKey => TABS.some((t) => t.key === v);
+
 export default function Page() {
-  const [tab, setTab] = React.useState<TabKey>("mutual");
+  return (
+    <React.Suspense fallback={<PeopleSkeleton />}>
+      <People />
+    </React.Suspense>
+  );
+}
+
+function People() {
+  // `/people?tab=followers` is where a profile's follower count links to.
+  const params = useSearchParams();
+  const requested = params?.get("tab") ?? null;
+  const [tab, setTab] = React.useState<TabKey>(isTabKey(requested) ? requested : "mutual");
   const [lists, setLists] = React.useState<Partial<Record<TabKey, Person[]>>>({});
   const [loading, setLoading] = React.useState(true);
   const [pending, setPending] = React.useState<Record<string, boolean>>({});
@@ -117,18 +131,7 @@ export default function Page() {
       </PageHeader>
 
       {loading && !people ? (
-        <div className="divide-y divide-line">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-3 p-4">
-              <div className="skeleton h-14 w-14 rounded-full" />
-              <div className="flex-1 space-y-2">
-                <div className="skeleton h-3.5 w-1/3 rounded-full" />
-                <div className="skeleton h-3 w-1/2 rounded-full" />
-              </div>
-              <div className="skeleton h-9 w-20 rounded-full" />
-            </div>
-          ))}
-        </div>
+        <PeopleSkeleton />
       ) : !people || people.length === 0 ? (
         <EmptyState
           icon={<UserPlus size={26} />}
@@ -171,5 +174,24 @@ export default function Page() {
         </ul>
       )}
     </>
+  );
+}
+
+/** Mirrors PersonRow's geometry so the list does not jump when it lands. */
+function PeopleSkeleton() {
+  return (
+    <div className="divide-y divide-line" aria-busy="true" aria-live="polite">
+      <span className="sr-only">Loading people…</span>
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className="flex items-center gap-3 p-4">
+          <div className="skeleton h-14 w-14 rounded-full" />
+          <div className="flex-1 space-y-2">
+            <div className="skeleton h-3.5 w-1/3 rounded-full" />
+            <div className="skeleton h-3 w-1/2 rounded-full" />
+          </div>
+          <div className="skeleton h-9 w-20 rounded-full" />
+        </div>
+      ))}
+    </div>
   );
 }

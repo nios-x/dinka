@@ -74,6 +74,27 @@ export default function PostCard({
   const router = useRouter();
   const [confirmDelete, setConfirmDelete] = React.useState(false);
 
+  /**
+   * Opening the post from anywhere on the card.
+   *
+   * This used to be a link stretched across the card behind its contents, which
+   * an opaque card background covers — the target was unreachable. Routing from
+   * the card's own click instead keeps the whole surface active *and* leaves the
+   * post text selectable, which a stretched overlay does not. The timestamp is a
+   * real link, so keyboard users and "copy link address" still have a permalink.
+   */
+  const openPost = (e: React.MouseEvent<HTMLElement>) => {
+    if (detail) return;
+    const target = e.target as HTMLElement;
+    // Anything interactive — and anything that opted out, like the media,
+    // where a tap is the first half of a double-tap like — handles its own click.
+    if (target.closest("a,button,video,input,textarea,[data-nav-skip],[role='menu'],[role='dialog']"))
+      return;
+    // Selecting text should never navigate.
+    if (window.getSelection()?.toString()) return;
+    router.push(`/postid/${post.id}`);
+  };
+
   const me = (session?.user as { id?: string } | undefined)?.id;
   const isAuthor = !!me && me === post.authorId;
   const author = post.author ?? { name: "Someone" };
@@ -116,11 +137,12 @@ export default function PostCard({
   return (
     <>
       <article
+        onClick={openPost}
         className={cn(
           "group relative transition-shadow",
           detail
             ? "card rounded-none border-x-0 border-t-0 shadow-none"
-            : "card mb-3 hover:shadow-[var(--shadow-md)]",
+            : "card mb-3 cursor-pointer hover:shadow-[var(--shadow-md)]",
           className
         )}
       >
@@ -166,7 +188,16 @@ export default function PostCard({
             <p className="meta flex items-center gap-1.5 truncate">
               <span className="truncate">@{handleOf(author)}</span>
               <span aria-hidden>·</span>
-              <time dateTime={new Date(post.createdAt).toISOString()}>{shortAgo(post.createdAt)}</time>
+              {/* The permalink. Keyboard and right-click reach the post here. */}
+              <Link
+                href={`/postid/${post.id}`}
+                className="shrink-0 transition-colors hover:text-ink-2 hover:underline"
+              >
+                <time dateTime={new Date(post.createdAt).toISOString()}>
+                  {shortAgo(post.createdAt)}
+                </time>
+                <span className="sr-only"> — open this post</span>
+              </Link>
               <span aria-hidden>·</span>
               {post.visiblity === "Public" ? (
                 <Globe size={11} aria-label="Public" />
@@ -330,19 +361,6 @@ export default function PostCard({
           </p>
         )}
 
-        {/* A full-card link that sits behind the controls rather than wrapping them. */}
-        {!detail && (
-          <Link
-            href={`/postid/${post.id}`}
-            aria-label={`Open post by ${author.name ?? "someone"}`}
-            className="absolute inset-0 -z-10"
-            tabIndex={-1}
-            onClick={(e) => {
-              // Let text selection win over navigation.
-              if (window.getSelection()?.toString()) e.preventDefault();
-            }}
-          />
-        )}
       </article>
 
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>

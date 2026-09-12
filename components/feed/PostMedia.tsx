@@ -60,6 +60,9 @@ export default function PostMedia({
   return (
     <div
       onClick={tap}
+      // A card-wide click opens the post; the media is the one region that
+      // opts out, because a tap here is the first half of a double-tap like.
+      data-nav-skip={onDoubleLike ? "" : undefined}
       className={cn(
         "relative w-full overflow-hidden bg-tile-sunk",
         rounded && "rounded-[var(--r-tile)]",

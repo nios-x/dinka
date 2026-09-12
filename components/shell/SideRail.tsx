@@ -24,14 +24,16 @@ export default function SideRail() {
     <aside className="sticky top-0 hidden h-svh w-[15rem] shrink-0 flex-col py-5 lg:flex">
       <Link
         href="/"
-        className="press mb-6 flex items-center gap-2.5 rounded-full px-3 py-1 text-ink"
+        className="press mb-6 flex shrink-0 items-center gap-2.5 rounded-full px-3 py-1 text-ink"
         aria-label="Dinka home"
       >
         <DinkaMark size={26} className="text-glaze" />
         <span className="wordmark text-[1.9rem] leading-none">dinka</span>
       </Link>
 
-      <nav className="flex flex-col gap-0.5" aria-label="Primary">
+      {/* Nine destinations plus the wordmark, Post and your account do not fit a
+          short laptop window, so the list — and only the list — scrolls. */}
+      <nav className="no-scrollbar flex min-h-0 flex-col gap-0.5 overflow-y-auto" aria-label="Primary">
         {RAIL_ITEMS.map((item) => {
           const active = isActive(item, pathname);
           const badge =
@@ -73,12 +75,12 @@ export default function SideRail() {
       <button
         type="button"
         onClick={() => openComposer()}
-        className="press mt-5 w-full rounded-full bg-glaze py-3 text-[0.95rem] font-semibold text-glaze-on shadow-[var(--shadow-glaze)] transition-colors hover:bg-glaze-hover"
+        className="press mt-5 w-full shrink-0 rounded-full bg-glaze py-3 text-[0.95rem] font-semibold text-glaze-on shadow-[var(--shadow-glaze)] transition-colors hover:bg-glaze-hover"
       >
         Post
       </button>
 
-      <div className="mt-auto flex items-center gap-2 pt-6">
+      <div className="mt-auto flex shrink-0 items-center gap-2 pt-6">
         <Link
           href={`/profile?id=${user?.id ?? ""}`}
           className="press flex min-w-0 flex-1 items-center gap-2.5 rounded-full p-1.5 transition-colors hover:bg-tile"

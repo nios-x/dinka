@@ -71,6 +71,7 @@ export default function Page() {
   const [saving, setSaving] = React.useState(false);
   const [uploading, setUploading] = React.useState(false);
   const [confirmDelete, setConfirmDelete] = React.useState(false);
+  const [provider, setProvider] = React.useState<string | null>(null);
   const fileRef = React.useRef<HTMLInputElement>(null);
 
   const me = session?.user as { id?: string; name?: string | null; image?: string | null } | undefined;
@@ -96,6 +97,7 @@ export default function Page() {
         };
         setForm(next);
         setInitial(next);
+        setProvider(d.user.provider ?? null);
       })
       .catch(() => toast.error("Could not load your profile"))
       .finally(() => setLoading(false));
@@ -355,7 +357,16 @@ export default function Page() {
         <Section icon={<Shield size={16} />} title="Account">
           <div className="space-y-1">
             <Row label="Email" value={session?.user?.email ?? "—"} />
-            <Row label="Signed in with" value={"Dinka account"} />
+            <Row
+              label="Signed in with"
+              value={
+                provider === "Google"
+                  ? "Google"
+                  : provider === "Email"
+                    ? "Email and password"
+                    : "—"
+              }
+            />
           </div>
 
           <button

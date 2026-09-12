@@ -32,6 +32,7 @@ export async function POST(req: NextRequest) {
       isVerified: true,
       createdAt: true,
       lastSeenAt: true,
+      provider: true,
       _count: { select: { posts: true } },
     },
   });
@@ -85,6 +86,9 @@ export async function POST(req: NextRequest) {
       isVerified: user.isVerified,
       createdAt: user.createdAt,
       lastSeenAt: user.lastSeenAt,
+      // How you signed up is your own business — Settings shows it, other
+      // people's profiles never see it.
+      provider: user.id === userId ? user.provider : undefined,
     },
     isMe: user.id === userId,
     isFollowing: outgoing?.type === "Follower",
