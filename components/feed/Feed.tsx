@@ -64,7 +64,9 @@ export default function Feed({
   }
 
   return (
-    <div className="sm:px-3">
+    // Cards are rounded panels now, so they need a gutter at every width —
+    // not just from `sm` up, where they used to run edge to edge.
+    <div className="px-3 pt-3">
       {posts.map((post, i) => (
         <motion.div
           key={post.id}

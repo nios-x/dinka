@@ -385,6 +385,17 @@
       inset 0 1px 0 0 var(--glass-sheen);
   }
 
+  /* Solid card. Post cards stay opaque rather than frosted: a feed is a long
+     column of text and photographs scrolling past each other, and glass there
+     means every card carries whatever is sliding underneath it. Glass is kept
+     for chrome and for panels that sit still. */
+  .card {
+    background-color: var(--tile-raised);
+    border: 1px solid var(--line);
+    border-radius: var(--r-tile);
+    box-shadow: var(--shadow-sm);
+  }
+
   /* The stat tile: label above, figure below. */
   .stat {
     background-color: color-mix(in oklab, var(--tile) var(--glass-tint), transparent);

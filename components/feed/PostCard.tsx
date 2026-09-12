@@ -119,8 +119,8 @@ export default function PostCard({
         className={cn(
           "group relative transition-shadow",
           detail
-            ? "tile rounded-none border-x-0 border-t-0"
-            : "tile mb-3 hover:shadow-[var(--shadow-md)]",
+            ? "card rounded-none border-x-0 border-t-0 shadow-none"
+            : "card mb-3 hover:shadow-[var(--shadow-md)]",
           className
         )}
       >

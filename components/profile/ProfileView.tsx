@@ -226,12 +226,12 @@ export default function ProfileView({ id }: { id: string }) {
         aria-label={u.coverUrl ? `${u.name ?? "Their"} cover image` : undefined}
       />
 
-      <div className="px-4">
-        {/* Only the avatar overlaps the cover; the actions sit below it with
-            their own room, and wrap rather than crowd on a narrow screen. */}
-        <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-3 pb-1">
+      <div className="px-4 pt-3">
+        {/* Only the avatar overlaps the cover. The actions keep clear of it,
+            and wrap onto their own line rather than crowd on a narrow screen. */}
+        <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-4">
           <span
-            className="-mt-11 rounded-full ring-4"
+            className="-mt-16 rounded-full ring-4"
             style={{ ["--tw-ring-color" as never]: "var(--ground)" }}
           >
             <Avatar
@@ -243,7 +243,7 @@ export default function ProfileView({ id }: { id: string }) {
             />
           </span>
 
-          <div className="flex flex-wrap items-center justify-end gap-2 pt-3">
+          <div className="ml-auto flex flex-wrap items-center justify-end gap-2 pb-0.5">
             {!data.isMe && (
               <>
                 <button
@@ -321,9 +321,22 @@ export default function ProfileView({ id }: { id: string }) {
             )}
           </div>
 
-          <p className="meta">
-            @{handleOf(u)}
-            {u.pronouns && ` · ${u.pronouns}`}
+          <p className="meta flex flex-wrap items-center gap-x-2">
+            <span>@{handleOf(u)}</span>
+            {u.pronouns && <span>· {u.pronouns}</span>}
+            {!data.isMe && u.lastSeenAt && (
+              <span className="flex items-center gap-1.5">
+                <span aria-hidden>·</span>
+                {isOnline(u.lastSeenAt) && (
+                  <span
+                    className="h-1.5 w-1.5 rounded-full"
+                    style={{ background: "var(--online)" }}
+                    aria-hidden
+                  />
+                )}
+                {presenceLabel(u.lastSeenAt)}
+              </span>
+            )}
           </p>
 
           {u.bio && (
@@ -404,7 +417,7 @@ export default function ProfileView({ id }: { id: string }) {
         ))}
       </div>
 
-      <div className="sm:pt-3">
+      <div>
         <Feed
           posts={posts}
           isLoading={postsLoading}

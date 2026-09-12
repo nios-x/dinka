@@ -159,7 +159,7 @@ export default function Page() {
         </div>
       </PageHeader>
 
-      <div className="sm:pt-3">
+      <div>
         <Feed
           posts={posts}
           isLoading={loading}

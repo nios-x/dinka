@@ -84,7 +84,7 @@ export default function Page() {
         ))}
       </div>
 
-      <div className="sm:pt-3">
+      <div>
         <Feed
           posts={posts}
           isLoading={isLoading}
