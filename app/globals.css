@@ -483,7 +483,11 @@
 
   /* Where backdrop-filter is unavailable the surface must still be opaque
      enough to read against, so fall back to a solid fill. */
-  @supports not (backdrop-filter: blur(1px)) {
+  /* Both spellings have to be tested. Safari shipped only the prefixed
+     property until 18, so testing the standard one alone reads as "no support"
+     on every iPhone before that — and the fallback then paints the bars solid,
+     throwing away the blur those browsers were perfectly able to do. */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     .glass,
     .tile,
     .stat,
@@ -501,16 +505,26 @@
     .glass,
     .tile,
     .tile-raised,
-    .stat,
-    .frost-tile {
+    .stat {
       background-color: var(--tile);
       backdrop-filter: none;
     }
 
+    /* The chrome keeps a light blur. What this preference asks for is that
+       content stop showing through, and a near-opaque fill is what delivers
+       that; the residual blur only softens the edge where a photograph passes
+       under a bar mid-scroll. Windows maps its "Transparency effects" switch
+       onto this query, so a plain `backdrop-filter: none` here takes the glass
+       off the bars for a large share of desktop users who never asked for it. */
     .frost,
     .glass-bar {
-      background-color: var(--ground);
-      backdrop-filter: none;
+      background-color: color-mix(in oklab, var(--ground) 88%, transparent);
+      backdrop-filter: blur(14px);
+    }
+
+    .frost-tile {
+      background-color: color-mix(in oklab, var(--tile) 90%, transparent);
+      backdrop-filter: blur(14px);
     }
   }
 

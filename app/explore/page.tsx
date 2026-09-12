@@ -11,6 +11,8 @@ import { openPalette } from "@/components/composer/composer-bus";
 import { compact } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { ExploreIcon } from "@/components/icons";
+import MediaThumb from "@/components/ui/media-thumb";
+import { isVideo } from "@/lib/media";
 import type { FeedPost } from "@/app/Providers/PostsProvider";
 
 /**
@@ -183,12 +185,11 @@ export default function Page() {
 }
 
 function Tile({ post, tall }: { post: FeedPost; tall: boolean }) {
-  const isVideo =
-    (post.mediaType ?? "").startsWith("video") || /\.(mp4|webm|mov)(\?|$)/i.test(post.mediaurl ?? "");
-
   // The caller filters these out already; this keeps an empty `src` — which
   // browsers resolve against the page URL — off the grid if one ever slips by.
   if (!post.mediaurl) return null;
+
+  const video = isVideo(post.mediaurl, post.mediaType);
 
   return (
     <Link
@@ -198,14 +199,14 @@ function Tile({ post, tall }: { post: FeedPost; tall: boolean }) {
         !tall && "aspect-square"
       )}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={post.mediaurl}
+      <MediaThumb
+        url={post.mediaurl}
+        type={post.mediaType}
         alt={post.title?.slice(0, 80) || "Post"}
-        loading="lazy"
-        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+        width={600}
+        className="h-full w-full transition-transform duration-500 group-hover:scale-[1.04]"
       />
-      {isVideo && (
+      {video && (
         <span className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-black/55 text-white backdrop-blur-sm">
           <Play size={12} fill="currentColor" />
         </span>

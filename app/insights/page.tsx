@@ -10,6 +10,7 @@ import EmptyState from "@/components/ui/empty-state";
 import { compact, delta, pct } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { InsightsIcon } from "@/components/icons";
+import MediaThumb from "@/components/ui/media-thumb";
 
 /**
  * Creator insights.
@@ -243,11 +244,11 @@ export default function Page() {
                       className="flex items-center gap-3 rounded-[var(--r-field)] px-3 py-2.5 transition-colors hover:bg-tile-sunk"
                     >
                       {p.isMedia && p.mediaurl ? (
-                        /* eslint-disable-next-line @next/next/no-img-element */
-                        <img
-                          src={p.mediaurl}
+                        <MediaThumb
+                          url={p.mediaurl}
                           alt=""
-                          className="h-12 w-12 shrink-0 rounded-[var(--r-chip)] object-cover"
+                          width={160}
+                          className="h-12 w-12 shrink-0 rounded-[var(--r-chip)]"
                         />
                       ) : (
                         <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[var(--r-chip)] bg-tile-sunk text-[0.62rem] font-bold uppercase tracking-wide text-ink-3">

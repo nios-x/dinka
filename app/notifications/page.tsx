@@ -8,6 +8,7 @@ import { Loader2, CheckCheck, UserPlus, AtSign, MessageSquare } from "lucide-rea
 import PageHeader from "@/components/shell/PageHeader";
 import EmptyState from "@/components/ui/empty-state";
 import { Avatar } from "@/components/ui/avatar";
+import MediaThumb from "@/components/ui/media-thumb";
 import { useCounts } from "@/app/Providers/CountsProvider";
 import { shortAgo } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -189,11 +190,11 @@ function Row({ n }: { n: Notification }) {
       </span>
 
       {n.post?.isMedia && n.post.mediaurl && (
-        /* eslint-disable-next-line @next/next/no-img-element */
-        <img
-          src={n.post.mediaurl}
+        <MediaThumb
+          url={n.post.mediaurl}
           alt=""
-          className="h-12 w-12 shrink-0 rounded-[var(--r-chip)] object-cover"
+          width={160}
+          className="h-12 w-12 shrink-0 rounded-[var(--r-chip)]"
         />
       )}
 
