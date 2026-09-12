@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import SideRail from "./SideRail";
 import Aside from "./Aside";
@@ -47,6 +47,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     if (status !== "unauthenticated" || publicRoute) return;
     router.replace(`/login?next=${encodeURIComponent(pathname)}`);
   }, [status, publicRoute, pathname, router]);
+
+  // An interior route cannot show anything useful without a session. Hold the
+  // frame until there is one: painting the page chrome-less for a beat is a
+  // visible flash, and the requests it fires meanwhile only come back 401.
+  if (!publicRoute && status !== "authenticated") {
+    return <div className="min-h-svh" aria-busy="true" />;
+  }
 
   // A signed-out visitor gets the marketing page with no app chrome around it.
   const chrome = signedIn && !bare;

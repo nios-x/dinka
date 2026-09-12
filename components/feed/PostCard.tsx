@@ -142,7 +142,7 @@ export default function PostCard({
           "group relative transition-shadow",
           // Flush at every width: the only edge a post has is the hairline
           // under it, which doubles as the divider to the next one.
-          "card rounded-none border-x-0 border-t-0 shadow-none",
+          "card card-post rounded-none border-x-0 border-t-0 shadow-none",
           !detail && "cursor-pointer",
           className
         )}

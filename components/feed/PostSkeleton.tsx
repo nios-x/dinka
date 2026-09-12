@@ -7,7 +7,7 @@ import React from "react";
  */
 export default function PostSkeleton({ media = true }: { media?: boolean }) {
   return (
-    <div className="card rounded-none border-x-0 border-t-0 p-4 shadow-none">
+    <div className="card card-post rounded-none border-x-0 border-t-0 p-4 shadow-none">
       <div className="flex items-center gap-3">
         <div className="skeleton h-12 w-12 rounded-full" />
         <div className="flex-1 space-y-2">

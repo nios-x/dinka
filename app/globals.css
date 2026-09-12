@@ -29,6 +29,11 @@
   --tile-raised: #faf7f1;
   --tile-sunk: #ece7dd;
 
+  /* The post surface sits a shade below a card. Posts run edge to edge, so
+     this tone covers whole screens at a time, and the near-white card value
+     flattened into grey at that size instead of reading as warm paper. */
+  --post: #f2eee6;
+
   /* ── Glass: how much backdrop each surface lets through ── */
   --glass-tint: 66%;
   --glass-tint-strong: 80%;
@@ -117,6 +122,10 @@
   --tile: #17171b;
   --tile-raised: #1f1f25;
   --tile-sunk: #101014;
+
+  /* Darker than a card here too, and pulled off the violet cast that made a
+     full screen of charcoal read as grey. */
+  --post: #191a1e;
 
   /* Dark glass leans cool and lets more of the ambient light through. */
   --glass-tint: 62%;
@@ -409,6 +418,13 @@
     border: 1px solid var(--line);
     border-radius: var(--r-tile);
     box-shadow: var(--shadow-sm);
+  }
+
+  /* A post, which is a card on its own slightly deeper surface. Panels and
+     sheets keep the lighter card tone — only the feed needed the extra
+     weight, because only the feed is wall-to-wall one colour. */
+  .card-post {
+    background-color: var(--post);
   }
 
   /* The stat tile: label above, figure below. */
