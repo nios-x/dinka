@@ -94,6 +94,17 @@
   --topbar-h: 3.5rem;
   --dock-h: 4.5rem;
 
+  /* Measured by PageHeader at runtime so a second sticky row on the same
+     surface (profile tabs, feed switch) can park directly beneath it instead
+     of sliding underneath. Zero until a header mounts. */
+  --page-header-h: 0px;
+
+  /* The stage: full-bleed media surfaces — a call, a story, a reel — that do
+     not follow the theme. Photographs and video are graded for a dark
+     surround, so these stay dark in both themes. */
+  --stage: #0d0c10;
+  --stage-ink: #f7f6f4;
+
   color-scheme: light;
 }
 
@@ -184,6 +195,8 @@
   --color-iris: var(--iris);
   --color-iris-soft: var(--iris-soft);
   --color-online: var(--online);
+  --color-stage: var(--stage);
+  --color-stage-ink: var(--stage-ink);
 
   /* shadcn compatibility aliases — existing primitives keep working */
   --color-background: var(--ground);
@@ -248,28 +261,29 @@
     overscroll-behavior-y: none;
   }
 
-  /* Ambient light behind the glass. Without something colourful to refract,
-     a frosted surface is just a flat panel — these soft fields are what the
-     blur actually picks up. Fixed, so scrolling moves content across them. */
+  /* Ambient light behind the glass.
+
+     A frosted surface with nothing behind it is just a translucent rectangle,
+     so the page keeps a light source for the blur to pick up. Two fields, both
+     in brand hues, both anchored above the fold: the colour belongs to the top
+     of the page where the chrome is, and the ground goes plain warm neutral by
+     the time you are reading. Four hues spread to four corners read as a
+     gradient wallpaper rather than as light. */
   body::before {
     content: "";
     position: fixed;
-    inset: -10%;
+    inset: 0;
     z-index: 0;
     pointer-events: none;
     background-image:
-      radial-gradient(38rem 38rem at 12% 8%, rgb(18 179 159 / 0.22), transparent 62%),
-      radial-gradient(34rem 34rem at 88% 14%, rgb(99 85 200 / 0.18), transparent 60%),
-      radial-gradient(40rem 40rem at 72% 88%, rgb(200 137 27 / 0.16), transparent 62%),
-      radial-gradient(30rem 30rem at 22% 78%, rgb(224 70 60 / 0.12), transparent 60%);
+      radial-gradient(46rem 30rem at 8% -6%, rgb(18 179 159 / 0.13), transparent 68%),
+      radial-gradient(40rem 28rem at 96% 2%, rgb(99 85 200 / 0.09), transparent 66%);
   }
 
   .dark body::before {
     background-image:
-      radial-gradient(38rem 38rem at 12% 8%, rgb(45 224 200 / 0.16), transparent 62%),
-      radial-gradient(34rem 34rem at 88% 14%, rgb(155 140 245 / 0.14), transparent 60%),
-      radial-gradient(40rem 40rem at 72% 88%, rgb(232 169 60 / 0.1), transparent 62%),
-      radial-gradient(30rem 30rem at 22% 78%, rgb(255 106 94 / 0.1), transparent 60%);
+      radial-gradient(46rem 30rem at 8% -6%, rgb(45 224 200 / 0.1), transparent 68%),
+      radial-gradient(40rem 28rem at 96% 2%, rgb(155 140 245 / 0.08), transparent 66%);
   }
 
   h1, h2, h3, h4 {
@@ -298,10 +312,11 @@
     opacity: 1;
   }
 
+  /* The ring follows whatever radius the element already has — forcing one
+     here reshapes round controls the moment they take focus. */
   :focus-visible {
     outline: 2px solid var(--glaze);
     outline-offset: 2px;
-    border-radius: 4px;
   }
 
   a {
@@ -435,6 +450,28 @@
     .glass-bar,
     .frost-tile {
       background-color: var(--tile);
+    }
+  }
+
+  /* Immersive media surfaces — calls, stories, reels. Dark in both themes,
+     because a photograph is graded for a dark surround. */
+  .stage {
+    background-color: var(--stage);
+    color: var(--stage-ink);
+  }
+
+  /* A second sticky row on a surface that already has a PageHeader: profile
+     tabs, a feed switch. Parks directly under the header rather than at the
+     same offset, where it would scroll out of sight behind it. */
+  .sticky-sub {
+    position: sticky;
+    top: calc(var(--topbar-h) + var(--page-header-h));
+    z-index: 20;
+  }
+
+  @media (min-width: 1024px) {
+    .sticky-sub {
+      top: var(--page-header-h);
     }
   }
 

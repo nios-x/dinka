@@ -10,6 +10,10 @@ import { cn } from "@/lib/utils";
  *
  * Sticky below the phone top bar and at the top of the column on desktop, with
  * an optional back control and a slot for surface-specific actions.
+ *
+ * It measures itself into `--page-header-h`, which is what lets a second
+ * sticky row on the same surface — the profile's tab bar — park directly
+ * beneath it instead of at the same offset, hidden behind it.
  */
 export default function PageHeader({
   title,
@@ -28,9 +32,25 @@ export default function PageHeader({
   className?: string;
 }) {
   const router = useRouter();
+  const ref = React.useRef<HTMLElement>(null);
+
+  React.useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const root = document.documentElement;
+    const publish = () => root.style.setProperty("--page-header-h", `${el.offsetHeight}px`);
+    publish();
+    const ro = new ResizeObserver(publish);
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      root.style.removeProperty("--page-header-h");
+    };
+  }, []);
 
   return (
     <header
+      ref={ref}
       className={cn(
         "glass-bar sticky top-14 z-30 border-b border-line lg:top-0",
         className

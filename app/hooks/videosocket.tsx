@@ -34,6 +34,8 @@ export function SocketProvider({ children }: any) {
 
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
+  // Drives the call timer: true from the moment media can actually flow.
+  const [connected, setConnected] = useState(false);
   const [peer, setPeer] = useState<CallPeer>(null);
   const [incoming, setIncoming] = useState<{ fromUserID: string; offer: any } | null>(null);
 
@@ -97,8 +99,11 @@ export function SocketProvider({ children }: any) {
 
       // If the other side vanishes without signalling, end the call anyway.
       // Reached through a ref because teardown rebuilds the peer in turn.
+      // "disconnected" is not terminal — a network blip recovers on its own,
+      // and only "failed" means it never will.
       pc.onconnectionstatechange = () => {
-        if (["failed", "closed", "disconnected"].includes(pc.connectionState)) {
+        setConnected(pc.connectionState === "connected");
+        if (["failed", "closed"].includes(pc.connectionState)) {
           teardownRef.current();
         }
       };
@@ -135,6 +140,7 @@ export function SocketProvider({ children }: any) {
     setIncoming(null);
     setMicOn(true);
     setCamOn(true);
+    setConnected(false);
     setIceCandidatesQueue([]);
 
     // A fresh connection so the next call can start immediately.
@@ -404,6 +410,7 @@ export function SocketProvider({ children }: any) {
           peer={peer}
           micOn={micOn}
           camOn={camOn}
+          connected={connected}
           onToggleMic={toggleMic}
           onToggleCam={toggleCam}
           onEnd={endCall}

@@ -258,7 +258,7 @@ export default function ProfileView({ id }: { id: string }) {
                   type="button"
                   onClick={() => createCall(u.id)}
                   aria-label="Start a video call"
-                  className="press hidden h-10 w-10 place-items-center rounded-full border border-line text-ink-2 transition-colors hover:text-ink xs:grid sm:grid"
+                  className="press hidden h-10 w-10 place-items-center rounded-full border border-line text-ink-2 transition-colors hover:text-ink sm:grid"
                 >
                   <Video size={17} />
                 </button>
@@ -368,13 +368,13 @@ export default function ProfileView({ id }: { id: string }) {
           </div>
 
           <div className="mt-3 flex items-center gap-5">
-            <Link href="/people" className="group">
+            <Link href="/people?tab=followers" className="group">
               <span className="text-[1rem] font-bold tabular-nums text-ink">
                 {compact(data.followersCount)}
               </span>{" "}
               <span className="text-[0.85rem] text-ink-3 group-hover:underline">Followers</span>
             </Link>
-            <Link href="/people" className="group">
+            <Link href="/people?tab=following" className="group">
               <span className="text-[1rem] font-bold tabular-nums text-ink">
                 {compact(data.followingCount)}
               </span>{" "}
@@ -393,13 +393,14 @@ export default function ProfileView({ id }: { id: string }) {
         </div>
       </div>
 
-      <div className="glass-bar sticky top-14 z-20 mt-4 flex border-b border-line lg:top-0">
+      <div className="glass-bar sticky-sub mt-4 flex border-b border-line" role="tablist" aria-label="Profile sections">
         {tabs.map((t) => (
           <button
             key={t.key}
             type="button"
+            role="tab"
+            aria-selected={tab === t.key}
             onClick={() => setTab(t.key)}
-            aria-pressed={tab === t.key}
             className={cn(
               "relative flex-1 py-3 text-[0.875rem] font-semibold transition-colors",
               tab === t.key ? "text-ink" : "text-ink-3 hover:text-ink-2"
@@ -454,17 +455,29 @@ export default function ProfileView({ id }: { id: string }) {
   );
 }
 
-function ProfileSkeleton() {
+/** Mirrors the real header's geometry — same cover height, same avatar size and
+ *  overlap, same action row — so nothing shifts when the profile lands. */
+export function ProfileSkeleton() {
   return (
-    <div>
+    <div aria-busy="true" aria-live="polite">
+      <span className="sr-only">Loading profile…</span>
       <div className="skeleton h-32 w-full sm:h-40" />
-      <div className="px-4">
-        <div className="-mt-11">
-          <div className="skeleton h-[88px] w-[88px] rounded-full ring-4 ring-ground" />
+      <div className="px-4 pt-3">
+        <div className="flex items-end justify-between gap-3">
+          <div
+            className="-mt-16 rounded-full ring-4"
+            style={{ ["--tw-ring-color" as never]: "var(--ground)" }}
+          >
+            <div className="skeleton h-[104px] w-[104px] rounded-full" />
+          </div>
+          <div className="flex gap-2 pb-0.5">
+            <div className="skeleton h-10 w-10 rounded-full" />
+            <div className="skeleton h-10 w-28 rounded-full" />
+          </div>
         </div>
-        <div className="mt-3 space-y-2">
-          <div className="skeleton h-5 w-40 rounded-full" />
-          <div className="skeleton h-3 w-24 rounded-full" />
+        <div className="mt-3 space-y-2.5">
+          <div className="skeleton h-6 w-44 rounded-full" />
+          <div className="skeleton h-3 w-28 rounded-full" />
           <div className="skeleton h-3 w-full rounded-full" />
           <div className="skeleton h-3 w-2/3 rounded-full" />
         </div>
