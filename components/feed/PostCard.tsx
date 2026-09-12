@@ -140,9 +140,10 @@ export default function PostCard({
         onClick={openPost}
         className={cn(
           "group relative transition-shadow",
-          detail
-            ? "card rounded-none border-x-0 border-t-0 shadow-none"
-            : "card mb-3 cursor-pointer hover:shadow-[var(--shadow-md)]",
+          // Flush at every width: the only edge a post has is the hairline
+          // under it, which doubles as the divider to the next one.
+          "card rounded-none border-x-0 border-t-0 shadow-none",
+          !detail && "cursor-pointer",
           className
         )}
       >
@@ -272,8 +273,9 @@ export default function PostCard({
         )}
 
         {post.isMedia && post.mediaurl && (
-          <div className="px-4 pb-3">
+          <div className="pb-3">
             <PostMedia
+              rounded={false}
               url={post.mediaurl}
               type={post.mediaType}
               width={post.mediaWidth}

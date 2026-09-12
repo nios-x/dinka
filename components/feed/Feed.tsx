@@ -64,9 +64,9 @@ export default function Feed({
   }
 
   return (
-    // Cards are rounded panels now, so they need a gutter at every width —
-    // not just from `sm` up, where they used to run edge to edge.
-    <div className="px-3 pt-3">
+    // Posts run edge to edge: no gutter, no corner, no gap. One hairline
+    // between them is the only thing separating one post from the next.
+    <div>
       {posts.map((post, i) => (
         <motion.div
           key={post.id}
