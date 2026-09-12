@@ -26,7 +26,14 @@ export const POST = async (req: NextRequest) => {
     const title = String(data.title ?? "").trim().slice(0, 2000);
     const visiblity: Viewers = data.visiblity === "Followers" ? "Followers" : "Public";
     const location = data.location ? String(data.location).slice(0, 60) : null;
-    const quoteOf = Number.isFinite(Number(data.quoteOf)) ? Number(data.quoteOf) : null;
+    // `Number(null)` is 0 and `Number.isFinite(0)` is true, so a plain
+    // finite-check would turn "not a repost" into a reference to post 0.
+    const quoteOf =
+      data.quoteOf === null || data.quoteOf === undefined || data.quoteOf === ""
+        ? null
+        : Number.isInteger(Number(data.quoteOf)) && Number(data.quoteOf) > 0
+          ? Number(data.quoteOf)
+          : null;
     const poll =
       data.poll && Array.isArray(data.poll.options) && data.poll.options.length >= 2
         ? {

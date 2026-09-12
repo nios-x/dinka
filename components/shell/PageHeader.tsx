@@ -32,7 +32,7 @@ export default function PageHeader({
   return (
     <header
       className={cn(
-        "sticky top-14 z-30 border-b border-line bg-ground lg:top-0",
+        "glass-bar sticky top-14 z-30 border-b border-line lg:top-0",
         className
       )}
     >

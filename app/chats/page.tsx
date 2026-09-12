@@ -10,6 +10,7 @@ import EmptyState from "@/components/ui/empty-state";
 import { Avatar } from "@/components/ui/avatar";
 import { useCounts } from "@/app/Providers/CountsProvider";
 import { shortAgo } from "@/lib/format";
+import { isOnline } from "@/lib/presence";
 import { cn } from "@/lib/utils";
 import { MessagesIcon } from "@/components/icons";
 
@@ -29,8 +30,8 @@ type Chat = {
   type: string;
   isSeen: boolean | null;
   createdAt: string;
-  from: { id: string; name: string | null; username: string | null; pic: string | null };
-  to: { id: string; name: string | null; username: string | null; pic: string | null };
+  from: { id: string; name: string | null; username: string | null; pic: string | null; lastSeenAt?: string };
+  to: { id: string; name: string | null; username: string | null; pic: string | null; lastSeenAt?: string };
 };
 
 export default function Page() {
@@ -113,7 +114,13 @@ export default function Page() {
                 href={`/chat?id=${contact?.id}`}
                 className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-tile-sunk"
               >
-                <Avatar src={contact?.pic} name={contact?.name} userId={contact?.id} size="xl" />
+                <Avatar
+                  src={contact?.pic}
+                  name={contact?.name}
+                  userId={contact?.id}
+                  size="xl"
+                  online={isOnline(contact?.lastSeenAt)}
+                />
 
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline justify-between gap-2">

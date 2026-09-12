@@ -1,307 +1,422 @@
-"use client"
-import React, { useState, useEffect, useRef, useContext, createContext } from "react";
+"use client";
+
+import React, { useState, useEffect, useRef, useContext, createContext, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { json } from "zod";
 import { toast } from "sonner";
+import { CallScreen, IncomingCall, type CallPeer } from "@/components/call/CallOverlay";
 
-const SocketContext = createContext<any>(null)
+const SocketContext = createContext<any>(null);
+
+const ICE_SERVERS: RTCIceServer[] = [
+  { urls: "stun:stun.l.google.com:19302" },
+  { urls: "stun:stun1.l.google.com:19302" },
+  { urls: "stun:stun2.l.google.com:19302" },
+  { urls: "stun:stun3.l.google.com:19302" },
+  { urls: "stun:stun4.l.google.com:19302" },
+  { urls: "stun:stun.services.mozilla.com" },
+  { urls: "turn:relay.metered.ca:80", username: "openai", credential: "openai123" },
+  { urls: "turn:relay.metered.ca:443", username: "openai", credential: "openai123" },
+  { urls: "turn:relay1.expressturn.com:3478", username: "efh73s", credential: "dqwd9QMS8Ne8grmB" },
+  { urls: "turn:relay.metered.ca:443?transport=tcp", username: "openai", credential: "openai123" },
+];
 
 export function SocketProvider({ children }: any) {
   const router = useRouter();
-  const [videoStream, setVideoStream] = useState<MediaStream | null>(null);
-  const [remoteUser, setRemoteUser] = useState<string | null>(null);
+  const { data: session }: any = useSession();
+
+  const [socket, setSocket] = useState<WebSocket | null>(null);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
-  const { data: session }: any = useSession();
-  const [socket, setSocket] = useState<WebSocket | null>(null);
-  const [peerConnection, setPeerConection] = useState<RTCPeerConnection | null>(null);
+  const [remoteUser, setRemoteUser] = useState<string | null>(null);
   const [socketMessages, setSocketMessages] = useState<Record<string, any[]>>({});
-  // State to queue ICE candidates before remote description is set
   const [iceCandidatesQueue, setIceCandidatesQueue] = useState<RTCIceCandidate[]>([]);
 
+  const [micOn, setMicOn] = useState(true);
+  const [camOn, setCamOn] = useState(true);
+  const [peer, setPeer] = useState<CallPeer>(null);
+  const [incoming, setIncoming] = useState<{ fromUserID: string; offer: any } | null>(null);
 
-  const send_message = (targetUserID: string, content: string, fromUserID: string) => {
-    socket?.send(JSON.stringify({
-      targetUserID: targetUserID,
-      userID: fromUserID,
-      content,
-      type: "foreward_message"
-    }))
-  }
-  useEffect(() => {
-    console.log("remote user changed to: ", remoteUser);
-  }, [remoteUser]);
-
+  // Refs let the teardown path reach the live objects without re-running effects.
+  const socketRef = useRef<WebSocket | null>(null);
+  const pcRef = useRef<RTCPeerConnection | null>(null);
+  const localStreamRef = useRef<MediaStream | null>(null);
   const remoteUserRef = useRef<string | null>(null);
+  const teardownRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     remoteUserRef.current = remoteUser;
   }, [remoteUser]);
 
   useEffect(() => {
-    if (session?.user?.id) {
-      const ws = new WebSocket(`${process.env.NEXT_PUBLIC_BACKEND}`);
-      const pc = new RTCPeerConnection({
-        iceServers: [
-          // Google STUN
-          { urls: "stun:stun.l.google.com:19302" },
-          { urls: "stun:stun1.l.google.com:19302" },
-          { urls: "stun:stun2.l.google.com:19302" },
-          { urls: "stun:stun3.l.google.com:19302" },
-          { urls: "stun:stun4.l.google.com:19302" },
+    localStreamRef.current = localStream;
+  }, [localStream]);
 
-          // Mozilla
-          { urls: "stun:stun.services.mozilla.com" },
-
-
-          // TURN (relay – required for mobile/symmetric NAT)
-          {
-            urls: "turn:relay.metered.ca:80",
-            username: "openai",
-            credential: "openai123",
-          },
-          {
-            urls: "turn:relay.metered.ca:443",
-            username: "openai",
-            credential: "openai123",
-          },
-          {
-            urls: "turn:relay1.expressturn.com:3478",
-            username: "efh73s",
-            credential: "dqwd9QMS8Ne8grmB",
-          },
-          {
-            urls: "turn:relay.metered.ca:443?transport=tcp",
-            username: "openai",
-            credential: "openai123",
-          },
-        ],
+  /** Looks up who is on the other end so the call screen can name them. */
+  const loadPeer = useCallback(async (id: string) => {
+    setPeer({ id });
+    try {
+      const res = await fetch("/api/v1/getuserdetails", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
       });
+      const data = await res.json();
+      if (data?.user) setPeer({ id, name: data.user.name, pic: data.user.pic ?? data.user.image });
+    } catch {
+      // The call still works without a name.
+    }
+  }, []);
 
-      setPeerConection(pc);
-      ws.onopen = () => {
-        ws.send(JSON.stringify({ type: "register", userID: session.user.id }));
-        console.log("WebSocket connected");
-      };
+  /**
+   * Builds a peer connection and wires its handlers. Called once at start-up
+   * and again after every hang-up, because a closed RTCPeerConnection cannot
+   * be reused for the next call.
+   */
+  const buildPeer = useCallback(
+    (ws: WebSocket, userId: string) => {
+      const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
 
       pc.onicecandidate = (event) => {
-        console.log("Ice Sent", remoteUserRef.current)
-        if (event.candidate) {
+        if (event.candidate && remoteUserRef.current) {
           ws.send(
             JSON.stringify({
               type: "ice_candidate",
               candidate: event.candidate,
-              targetUserID: remoteUserRef.current, // ✅ send correct target
-              userID: session.user.id,
+              targetUserID: remoteUserRef.current,
+              userID: userId,
             })
           );
         }
       };
 
       pc.ontrack = (event) => {
-        console.log("Remote track received");
-        const [remoteStreamObj] = event.streams;
-        setRemoteStream(remoteStreamObj);
+        const [stream] = event.streams;
+        setRemoteStream(stream);
       };
 
-      ws.onmessage = async (event) => {
-        const message = JSON.parse(event.data);
-        if (message.type === "forewarded_message") {
-          const otherUserId = message.fromUserId;
-          
-          if (!otherUserId) {
-            console.warn("Received message without fromUserId, ignoring.");
-            return;
-          }
+      // If the other side vanishes without signalling, end the call anyway.
+      // Reached through a ref because teardown rebuilds the peer in turn.
+      pc.onconnectionstatechange = () => {
+        if (["failed", "closed", "disconnected"].includes(pc.connectionState)) {
+          teardownRef.current();
+        }
+      };
 
-          let parsedMessageText = message.message;
-          let parsedMediaUrl = null;
-          
+      pcRef.current = pc;
+      return pc;
+    },
+    []
+  );
+
+  /** Releases the camera, microphone and peer connection, and clears the UI. */
+  const teardown = useCallback(() => {
+    localStreamRef.current?.getTracks().forEach((t) => t.stop());
+    localStreamRef.current = null;
+
+    const pc = pcRef.current;
+    if (pc) {
+      pc.getSenders().forEach((s) => {
+        try {
+          pc.removeTrack(s);
+        } catch {
+          /* already detached */
+        }
+      });
+      pc.onconnectionstatechange = null;
+      pc.close();
+      pcRef.current = null;
+    }
+
+    setLocalStream(null);
+    setRemoteStream(null);
+    setRemoteUser(null);
+    setPeer(null);
+    setIncoming(null);
+    setMicOn(true);
+    setCamOn(true);
+    setIceCandidatesQueue([]);
+
+    // A fresh connection so the next call can start immediately.
+    if (socketRef.current && session?.user?.id) {
+      buildPeer(socketRef.current, session.user.id);
+    }
+  }, [buildPeer, session?.user?.id]);
+
+  useEffect(() => {
+    teardownRef.current = teardown;
+  }, [teardown]);
+
+  /** Hangs up and tells the other side. */
+  const endCall = useCallback(() => {
+    const target = remoteUserRef.current;
+    if (socketRef.current?.readyState === WebSocket.OPEN && target) {
+      socketRef.current.send(
+        JSON.stringify({ type: "end_call", targetUserID: target, userID: session?.user?.id })
+      );
+    }
+    teardown();
+  }, [teardown, session?.user?.id]);
+
+  const toggleMic = useCallback(() => {
+    const track = localStreamRef.current?.getAudioTracks()[0];
+    if (!track) return;
+    track.enabled = !track.enabled;
+    setMicOn(track.enabled);
+  }, []);
+
+  const toggleCam = useCallback(() => {
+    const track = localStreamRef.current?.getVideoTracks()[0];
+    if (!track) return;
+    track.enabled = !track.enabled;
+    setCamOn(track.enabled);
+  }, []);
+
+  const send_message = (targetUserID: string, content: string, fromUserID: string) => {
+    socketRef.current?.send(
+      JSON.stringify({ targetUserID, userID: fromUserID, content, type: "foreward_message" })
+    );
+  };
+
+  useEffect(() => {
+    if (!session?.user?.id) return;
+
+    const ws = new WebSocket(`${process.env.NEXT_PUBLIC_BACKEND}`);
+    socketRef.current = ws;
+    const userId = session.user.id;
+    const pc = buildPeer(ws, userId);
+
+    ws.onopen = () => {
+      ws.send(JSON.stringify({ type: "register", userID: userId }));
+    };
+
+    ws.onmessage = async (event) => {
+      const message = JSON.parse(event.data);
+
+      if (message.type === "forewarded_message") {
+        const otherUserId = message.fromUserId;
+        if (!otherUserId) return;
+
+        let text = message.message;
+        let mediaUrl: string | null = null;
+        try {
+          const parsed = JSON.parse(message.message);
+          if (parsed && typeof parsed === "object" && (parsed.text !== undefined || parsed.mediaUrl !== undefined)) {
+            text = parsed.text;
+            mediaUrl = parsed.mediaUrl ?? null;
+          }
+        } catch {
+          /* a plain string message */
+        }
+
+        setSocketMessages((prev) => ({
+          ...prev,
+          [otherUserId]: [
+            ...(prev[otherUserId] || []),
+            {
+              id: Date.now().toString(),
+              message: text,
+              mediaUrl,
+              fromId: otherUserId,
+              toId: userId,
+              createdAt: new Date().toISOString(),
+            },
+          ],
+        }));
+
+        const params = new URLSearchParams(window.location.search);
+        const openChat = params.get("id");
+        if (window.location.pathname !== "/chat" || openChat !== otherUserId) {
+          const body = text || (mediaUrl ? "Sent an attachment" : "");
           try {
-            const parsedObj = JSON.parse(message.message);
-            if (typeof parsedObj === "object" && parsedObj !== null) {
-              if (parsedObj.text !== undefined || parsedObj.mediaUrl !== undefined) {
-                parsedMessageText = parsedObj.text;
-                parsedMediaUrl = parsedObj.mediaUrl;
-              }
-            }
-          } catch (e) {
-            // It's just a normal text message, not JSON
-          }
-
-          const newChatMessage = {
-            id: Date.now().toString(),
-            message: parsedMessageText,
-            mediaUrl: parsedMediaUrl,
-            fromId: otherUserId,
-            toId: session?.user?.id
-          };
-
-          setSocketMessages((prev: any) => ({
-            ...prev,
-            [otherUserId]: [...(prev[otherUserId] || []), newChatMessage]
-          }));
-
-          const urlParams = new URLSearchParams(window.location.search);
-          const currentChatId = urlParams.get("id");
-          if (window.location.pathname !== "/chat" || currentChatId !== otherUserId) {
-            fetch("/api/v1/getuserdetails", {
+            const res = await fetch("/api/v1/getuserdetails", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ id: otherUserId }),
-            })
-              .then(res => res.json())
-              .then(data => {
-                const name = data?.user?.name || otherUserId;
-                const toastMsg = parsedMessageText || (parsedMediaUrl ? "📎 Sent an attachment" : "");
-                toast(`${name}: ${toastMsg}`, {
-                  action: {
-                    label: "Open",
-                    onClick: () => router.push(`/chat?id=${otherUserId}`)
-                  }
-                });
-              })
-              .catch(() => {
-                const toastMsg = parsedMessageText || (parsedMediaUrl ? "📎 Sent an attachment" : "");
-                toast(`${otherUserId}: ${toastMsg}`, {
-                  action: {
-                    label: "Open",
-                    onClick: () => router.push(`/chat?id=${otherUserId}`)
-                  }
-                });
-              });
+            });
+            const data = await res.json();
+            toast(`${data?.user?.name ?? "New message"}: ${body}`, {
+              action: { label: "Open", onClick: () => router.push(`/chat?id=${otherUserId}`) },
+            });
+          } catch {
+            toast(`New message: ${body}`, {
+              action: { label: "Open", onClick: () => router.push(`/chat?id=${otherUserId}`) },
+            });
           }
         }
-        else if (message.type === "incoming_call") {
-          setRemoteUser(message.fromUserID);
-          console.log("Incoming call from:", message.fromUserID);
-          const askuser = confirm(`Incoming call from ${message.fromUserID}. Accept?`);
+        return;
+      }
 
-          if (askuser && pc) {
-            pc.setRemoteDescription(new RTCSessionDescription(message.offer));
+      if (message.type === "incoming_call") {
+        // A ringing sheet rather than a blocking confirm(), so the call can be
+        // declined without freezing the page behind it.
+        setRemoteUser(message.fromUserID);
+        void loadPeer(message.fromUserID);
+        setIncoming({ fromUserID: message.fromUserID, offer: message.offer });
+        return;
+      }
 
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            setLocalStream(stream);
-            stream.getTracks().forEach(track => pc.addTrack(track, stream));
+      if (message.type === "call_answered") {
+        await pcRef.current?.setRemoteDescription(new RTCSessionDescription(message.answer));
+        return;
+      }
 
-            pc.createAnswer().then(answer => {
-              pc.setLocalDescription(answer);
-              ws.send(
-                JSON.stringify({
-                  type: "answer",
-                  targetUserID: message.fromUserID,
-                  userID: session.user.id,
-                  answer,
-                })
-              );
-            }).catch(err => console.error(err));
-          }
-        } else if (message.type === "call_answered") {
-          console.log("Call answered by:", message.fromUserID);
-          pc?.setRemoteDescription(new RTCSessionDescription(message.answer));
-        } else if (message.type === "ice_candidate") {
-          console.log("Received ICE candidate from:", message.fromUserID, message);
-          if (pc?.remoteDescription) {
-            pc?.addIceCandidate(new RTCIceCandidate(message.candidate)).catch(err => console.error(err));
-          } else {
-            setIceCandidatesQueue(prevQueue => [...prevQueue, new RTCIceCandidate(message.candidate)]);
-          }
+      if (message.type === "call_declined" || message.type === "end_call") {
+        toast("Call ended");
+        teardown();
+        return;
+      }
+
+      if (message.type === "ice_candidate") {
+        const candidate = new RTCIceCandidate(message.candidate);
+        if (pcRef.current?.remoteDescription) {
+          pcRef.current.addIceCandidate(candidate).catch(() => {});
+        } else {
+          setIceCandidatesQueue((q) => [...q, candidate]);
         }
-      };
+      }
+    };
 
-      ws.onclose = () => {
-        console.log("WebSocket disconnected");
-      };
-      setSocket(ws);
+    ws.onclose = () => {
+      socketRef.current = null;
+    };
 
-      return () => {
-        ws.close();
-        pc.close();
-        setSocket(null);
-        setPeerConection(null);
-      };
-    }
+    setSocket(ws);
+
+    return () => {
+      ws.close();
+      pc.close();
+      socketRef.current = null;
+      pcRef.current = null;
+      setSocket(null);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.user?.id]);
 
-  // Process queued ICE candidates after the remote description is set
+  // Candidates that arrived before the remote description was ready.
   useEffect(() => {
-    if (peerConnection?.remoteDescription && iceCandidatesQueue.length > 0) {
-      iceCandidatesQueue.forEach(candidate => {
-        peerConnection.addIceCandidate(candidate).catch(err => console.error(err));
-      });
-      // Clear the queue after processing
+    const pc = pcRef.current;
+    if (pc?.remoteDescription && iceCandidatesQueue.length > 0) {
+      iceCandidatesQueue.forEach((c) => pc.addIceCandidate(c).catch(() => {}));
       setIceCandidatesQueue([]);
     }
-  }, [peerConnection?.remoteDescription, iceCandidatesQueue]);
+  }, [iceCandidatesQueue, remoteStream]);
 
   const createCall = async (targetUserID: string) => {
-    console.log(targetUserID);
-    if (targetUserID) {
-      console.log(targetUserID);
-      setRemoteUser(targetUserID);
-    }
+    if (!targetUserID) return;
 
-    if (!peerConnection) {
-      console.error("PeerConnection is not established");
+    const pc = pcRef.current;
+    if (!pc) {
+      toast.error("Call service isn’t ready yet");
       return;
     }
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-    setLocalStream(stream);
-    stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
-    const offer = await peerConnection.createOffer();
-    await peerConnection.setLocalDescription(offer);
-    if (socket && socket.readyState === WebSocket.OPEN) {
-      socket.send(JSON.stringify({ type: "call", targetUserID, userID: session.user.id, offer }));
-    } else {
-      console.error("WebSocket is not connected");
+    if (socketRef.current?.readyState !== WebSocket.OPEN) {
+      toast.error("You’re offline — can’t start a call");
+      return;
+    }
+
+    setRemoteUser(targetUserID);
+    void loadPeer(targetUserID);
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      setLocalStream(stream);
+      localStreamRef.current = stream;
+      stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      socketRef.current.send(
+        JSON.stringify({ type: "call", targetUserID, userID: session.user.id, offer })
+      );
+    } catch {
+      toast.error("Dinka needs camera and microphone access to call");
+      teardown();
     }
   };
 
-  if (localStream || remoteStream) {
-    return (
-      <div className="relative">
-        {localStream && (
-          <video
-            className="rounded-lg absolute bottom-0 right-0 h-1/3 w-1/3"
-            autoPlay
-            muted
-            playsInline
-            ref={(videoEl) => {
-              if (videoEl) videoEl.srcObject = localStream;
-            }}
-          />
-        )}
+  const acceptCall = async () => {
+    if (!incoming) return;
+    const pc = pcRef.current;
+    if (!pc) return;
 
-        {remoteStream && (
-          <video
-            className="rounded-lg"
-            autoPlay
-            playsInline
-            ref={(videoEl) => {
-              if (videoEl) videoEl.srcObject = remoteStream;
-            }}
-          />
-        )}
-      </div>
-    );
-  }
+    const { fromUserID, offer } = incoming;
+    setIncoming(null);
+
+    try {
+      await pc.setRemoteDescription(new RTCSessionDescription(offer));
+
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      setLocalStream(stream);
+      localStreamRef.current = stream;
+      stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      socketRef.current?.send(
+        JSON.stringify({ type: "answer", targetUserID: fromUserID, userID: session.user.id, answer })
+      );
+    } catch {
+      toast.error("Dinka needs camera and microphone access to answer");
+      teardown();
+    }
+  };
+
+  const declineCall = () => {
+    if (incoming && socketRef.current?.readyState === WebSocket.OPEN) {
+      socketRef.current.send(
+        JSON.stringify({
+          type: "call_declined",
+          targetUserID: incoming.fromUserID,
+          userID: session?.user?.id,
+        })
+      );
+    }
+    teardown();
+  };
+
+  const inCall = !!localStream || !!remoteStream;
 
   return (
     <SocketContext.Provider
       value={{
+        socket,
         createCall,
+        endCall,
+        toggleMic,
+        toggleCam,
+        micOn,
+        camOn,
+        inCall,
         socketMessages,
         setSocketMessages,
         send_message,
       }}
     >
+      {/* The app stays mounted underneath; the call is an overlay, not a
+          replacement, so hanging up returns you exactly where you were. */}
       {children}
+
+      {inCall && (
+        <CallScreen
+          localStream={localStream}
+          remoteStream={remoteStream}
+          peer={peer}
+          micOn={micOn}
+          camOn={camOn}
+          onToggleMic={toggleMic}
+          onToggleCam={toggleCam}
+          onEnd={endCall}
+        />
+      )}
+
+      {incoming && !inCall && (
+        <IncomingCall peer={peer} onAccept={acceptCall} onDecline={declineCall} />
+      )}
     </SocketContext.Provider>
   );
 }
 
-// Custom hook
 export function useSocket() {
   return useContext(SocketContext);
 }

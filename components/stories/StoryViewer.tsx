@@ -212,11 +212,13 @@ export default function StoryViewer({
           <div className="absolute inset-x-0 top-0 flex gap-1 p-3">
             {group.stories.map((s, i) => (
               <div key={s.id} className="h-[2.5px] flex-1 overflow-hidden rounded-full bg-white/30">
+                {/* Scaled, not resized: the bar updates ~25×/s and animating
+                    width would relayout on every frame. */}
                 <div
-                  className="h-full rounded-full bg-white"
+                  className="h-full origin-left rounded-full bg-white"
                   style={{
-                    width: i < si ? "100%" : i === si ? `${progress * 100}%` : "0%",
-                    transition: i === si ? "width 60ms linear" : "none",
+                    transform: `scaleX(${i < si ? 1 : i === si ? progress : 0})`,
+                    transition: i === si ? "transform 60ms linear" : "none",
                   }}
                 />
               </div>

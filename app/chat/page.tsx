@@ -33,6 +33,7 @@ import {
 import { Avatar } from "@/components/ui/avatar";
 import { useCounts } from "@/app/Providers/CountsProvider";
 import { clock, dayLabel, handleOf } from "@/lib/format";
+import { isOnline, presenceLabel } from "@/lib/presence";
 import { cn } from "@/lib/utils";
 
 /**
@@ -194,7 +195,13 @@ function Thread() {
         </button>
 
         <Link href={`/profile?id=${toId}`} className="flex min-w-0 flex-1 items-center gap-2.5">
-          <Avatar src={partner?.pic ?? partner?.image} name={partner?.name} userId={toId} size="md" />
+          <Avatar
+            src={partner?.pic ?? partner?.image}
+            name={partner?.name}
+            userId={toId}
+            size="md"
+            online={isOnline(partner?.lastSeenAt)}
+          />
           <span className="min-w-0 leading-tight">
             <span className="flex items-center gap-1">
               <span className="truncate text-[0.95rem] font-semibold text-ink">
@@ -204,7 +211,9 @@ function Thread() {
                 <BadgeCheck size={14} className="shrink-0 text-glaze dark:text-teal" />
               )}
             </span>
-            <span className="meta block truncate">@{handleOf(partner)}</span>
+            <span className="meta block truncate">
+              {partner?.lastSeenAt ? presenceLabel(partner.lastSeenAt) : `@${handleOf(partner)}`}
+            </span>
           </span>
         </Link>
 
@@ -404,16 +413,18 @@ function Bubble({
     >
       <div
         className={cn(
-          "group relative max-w-[78%] select-none overflow-hidden px-3.5 py-2 text-[0.925rem] leading-relaxed sm:max-w-[68%]",
+          // A minimum width keeps the timestamp on the same footing as a
+          // one-word message instead of squeezing the bubble to nothing.
+          "group relative min-w-[5.5rem] max-w-[78%] select-none overflow-hidden px-4 py-2.5 text-[0.925rem] leading-relaxed sm:max-w-[68%]",
           isMe
-            ? "rounded-[18px] bg-glaze text-glaze-on"
-            : "rounded-[18px] border border-line bg-tile text-ink",
+            ? "rounded-[20px] bg-glaze text-glaze-on"
+            : "rounded-[20px] border border-line bg-tile text-ink",
           // The tail corner marks who is speaking without drawing a tail.
-          !grouped && (isMe ? "rounded-br-[6px]" : "rounded-bl-[6px]")
+          !grouped && (isMe ? "rounded-br-[7px]" : "rounded-bl-[7px]")
         )}
       >
         {chat.mediaUrl && (
-          <div className="-mx-3.5 -mt-2 mb-2">
+          <div className="-mx-4 -mt-2.5 mb-2.5">
             {isVideo ? (
               <video src={chat.mediaUrl} controls playsInline className="max-h-72 w-full object-cover" />
             ) : (
@@ -427,7 +438,7 @@ function Bubble({
 
         <span
           className={cn(
-            "mt-0.5 flex items-center justify-end gap-1 text-[0.65rem] tabular-nums",
+            "mt-1 flex items-center justify-end gap-1 text-[0.68rem] tabular-nums",
             isMe ? "text-glaze-on/65" : "text-ink-4"
           )}
         >

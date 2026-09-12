@@ -22,6 +22,7 @@ import { Avatar, AvatarStack } from "@/components/ui/avatar";
 import { useLocalPostActions } from "@/components/feed/useLocalPostActions";
 import { useSocket } from "@/app/hooks/videosocket";
 import { compact, handleOf, joinedLabel } from "@/lib/format";
+import { isOnline, presenceLabel } from "@/lib/presence";
 import { prettyLink, href as toHref } from "@/lib/richtext";
 import { cn } from "@/lib/utils";
 import { MessagesIcon, InsightsIcon } from "@/components/icons";
@@ -50,6 +51,7 @@ type Profile = {
     pronouns: string | null;
     isVerified: boolean;
     createdAt: string;
+    lastSeenAt?: string;
   };
   isMe: boolean;
   isFollowing: boolean;
@@ -225,12 +227,23 @@ export default function ProfileView({ id }: { id: string }) {
       />
 
       <div className="px-4">
-        <div className="-mt-11 flex items-end justify-between gap-3">
-          <span className="rounded-full ring-4" style={{ ["--tw-ring-color" as never]: "var(--ground)" }}>
-            <Avatar src={u.pic ?? u.image} name={u.name} userId={u.id} size="2xl" />
+        {/* Only the avatar overlaps the cover; the actions sit below it with
+            their own room, and wrap rather than crowd on a narrow screen. */}
+        <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-3 pb-1">
+          <span
+            className="-mt-11 rounded-full ring-4"
+            style={{ ["--tw-ring-color" as never]: "var(--ground)" }}
+          >
+            <Avatar
+              src={u.pic ?? u.image}
+              name={u.name}
+              userId={u.id}
+              size="2xl"
+              online={!data.isMe && isOnline(u.lastSeenAt)}
+            />
           </span>
 
-          <div className="flex items-center gap-2 pb-1">
+          <div className="flex flex-wrap items-center justify-end gap-2 pt-3">
             {!data.isMe && (
               <>
                 <button
@@ -367,7 +380,7 @@ export default function ProfileView({ id }: { id: string }) {
         </div>
       </div>
 
-      <div className="sticky top-14 z-20 mt-4 flex border-b border-line bg-ground lg:top-0">
+      <div className="glass-bar sticky top-14 z-20 mt-4 flex border-b border-line lg:top-0">
         {tabs.map((t) => (
           <button
             key={t.key}

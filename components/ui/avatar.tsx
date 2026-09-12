@@ -128,7 +128,7 @@ export function Avatar({
 }
 
 function PresenceDot({ px }: { px: number }) {
-  const d = Math.max(8, Math.round(px * 0.26));
+  const d = Math.max(9, Math.round(px * 0.26));
   return (
     <span
       className="absolute rounded-full border-2"
@@ -137,10 +137,12 @@ function PresenceDot({ px }: { px: number }) {
         height: d,
         right: 0,
         bottom: 0,
-        background: "var(--glaze)",
+        background: "var(--online)",
         borderColor: "var(--ground)",
       }}
-      aria-label="Online"
+      role="img"
+      aria-label="Online now"
+      title="Online now"
     />
   );
 }

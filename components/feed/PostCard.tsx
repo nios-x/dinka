@@ -117,10 +117,10 @@ export default function PostCard({
     <>
       <article
         className={cn(
-          "group relative bg-tile transition-colors",
+          "group relative transition-shadow",
           detail
-            ? "border-b border-line"
-            : "border-b border-line sm:mb-3 sm:rounded-[var(--r-tile)] sm:border sm:shadow-[var(--shadow-sm)] sm:hover:shadow-[var(--shadow-md)]",
+            ? "tile rounded-none border-x-0 border-t-0"
+            : "tile mb-3 hover:shadow-[var(--shadow-md)]",
           className
         )}
       >

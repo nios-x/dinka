@@ -24,10 +24,17 @@
   --ground-deep: #ebe7e0;
   --ground-sunk: #e2ddd4;
 
-  /* ── Cards: pure white on the ground ── */
-  --tile: #ffffff;
-  --tile-raised: #ffffff;
-  --tile-sunk: #f5f3ef;
+  /* ── Cards: warm frosted glass, not white ── */
+  --tile: #f7f3ec;
+  --tile-raised: #faf7f1;
+  --tile-sunk: #ece7dd;
+
+  /* ── Glass: how much backdrop each surface lets through ── */
+  --glass-tint: 66%;
+  --glass-tint-strong: 80%;
+  --glass-blur: 22px;
+  --glass-edge: rgb(255 253 248 / 0.55);
+  --glass-sheen: rgb(255 253 248 / 0.6);
 
   /* ── Ink: near-black with a warm cast ── */
   --ink: #17130f;
@@ -56,6 +63,7 @@
   --saffron-soft: #fbf0dd;
   --iris: #6355c8;
   --iris-soft: #eceaf9;
+  --online: #17c26a;
 
   /* ── Shadows: soft, low, neutral ── */
   --shadow-xs: 0 1px 2px rgb(23 19 15 / 0.04);
@@ -75,7 +83,6 @@
   /* ── Motion: exponential ease-out, from an already-visible default ── */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --dur-fast: 140ms;
   --dur: 260ms;
   --dur-slow: 480ms;
@@ -96,9 +103,16 @@
   --ground-deep: #060607;
   --ground-sunk: #030304;
 
-  --tile: #151518;
-  --tile-raised: #1d1d21;
-  --tile-sunk: #101013;
+  --tile: #17171b;
+  --tile-raised: #1f1f25;
+  --tile-sunk: #101014;
+
+  /* Dark glass leans cool and lets more of the ambient light through. */
+  --glass-tint: 62%;
+  --glass-tint-strong: 78%;
+  --glass-blur: 24px;
+  --glass-edge: rgb(255 255 255 / 0.08);
+  --glass-sheen: rgb(255 255 255 / 0.06);
 
   --ink: #f4f3f1;
   --ink-2: #b6b2ad;
@@ -124,6 +138,7 @@
   --saffron-soft: #2a1e0d;
   --iris: #9b8cf5;
   --iris-soft: #1c1930;
+  --online: #2ee07d;
 
   --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.5);
   --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4), 0 2px 8px -2px rgb(0 0 0 / 0.5);
@@ -168,6 +183,7 @@
   --color-saffron-soft: var(--saffron-soft);
   --color-iris: var(--iris);
   --color-iris-soft: var(--iris-soft);
+  --color-online: var(--online);
 
   /* shadcn compatibility aliases — existing primitives keep working */
   --color-background: var(--ground);
@@ -206,7 +222,6 @@
   --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, monospace;
 
   --ease-out: var(--ease-out);
-  --ease-spring: var(--ease-spring);
 }
 
 /* ═══════════════ Base ═══════════════ */
@@ -231,6 +246,30 @@
     overflow-x: hidden;
     min-height: 100svh;
     overscroll-behavior-y: none;
+  }
+
+  /* Ambient light behind the glass. Without something colourful to refract,
+     a frosted surface is just a flat panel — these soft fields are what the
+     blur actually picks up. Fixed, so scrolling moves content across them. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: -10%;
+    z-index: 0;
+    pointer-events: none;
+    background-image:
+      radial-gradient(38rem 38rem at 12% 8%, rgb(18 179 159 / 0.22), transparent 62%),
+      radial-gradient(34rem 34rem at 88% 14%, rgb(99 85 200 / 0.18), transparent 60%),
+      radial-gradient(40rem 40rem at 72% 88%, rgb(200 137 27 / 0.16), transparent 62%),
+      radial-gradient(30rem 30rem at 22% 78%, rgb(224 70 60 / 0.12), transparent 60%);
+  }
+
+  .dark body::before {
+    background-image:
+      radial-gradient(38rem 38rem at 12% 8%, rgb(45 224 200 / 0.16), transparent 62%),
+      radial-gradient(34rem 34rem at 88% 14%, rgb(155 140 245 / 0.14), transparent 60%),
+      radial-gradient(40rem 40rem at 72% 88%, rgb(232 169 60 / 0.1), transparent 62%),
+      radial-gradient(30rem 30rem at 22% 78%, rgb(255 106 94 / 0.1), transparent 60%);
   }
 
   h1, h2, h3, h4 {
@@ -311,40 +350,81 @@
 
 /* ═══════════════ World primitives ═══════════════ */
 @layer components {
-  /* White card on the page ground — the base surface in every reference. */
+  /* Frosted panel: the one surface recipe every card, sheet and bar uses.
+     The light edge along the top is what reads as a pane of glass rather
+     than a translucent rectangle. */
+  .glass {
+    background-color: color-mix(in oklab, var(--tile) var(--glass-tint), transparent);
+    backdrop-filter: blur(var(--glass-blur)) saturate(1.7);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.7);
+    border: 1px solid var(--glass-edge);
+    box-shadow:
+      var(--shadow-sm),
+      inset 0 1px 0 0 var(--glass-sheen);
+  }
+
   .tile {
-    background-color: var(--tile);
-    border: 1px solid var(--line);
+    background-color: color-mix(in oklab, var(--tile) var(--glass-tint), transparent);
+    backdrop-filter: blur(var(--glass-blur)) saturate(1.7);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.7);
+    border: 1px solid var(--glass-edge);
     border-radius: var(--r-tile);
-    box-shadow: var(--shadow-sm);
+    box-shadow:
+      var(--shadow-sm),
+      inset 0 1px 0 0 var(--glass-sheen);
   }
 
   .tile-raised {
-    background-color: var(--tile-raised);
-    border: 1px solid var(--line);
+    background-color: color-mix(in oklab, var(--tile-raised) var(--glass-tint-strong), transparent);
+    backdrop-filter: blur(calc(var(--glass-blur) + 8px)) saturate(1.8);
+    -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 8px)) saturate(1.8);
+    border: 1px solid var(--glass-edge);
     border-radius: var(--r-tile);
-    box-shadow: var(--shadow-md);
+    box-shadow:
+      var(--shadow-md),
+      inset 0 1px 0 0 var(--glass-sheen);
   }
 
-  /* The stat tile from the dashboard reference: label above, figure below. */
+  /* The stat tile: label above, figure below. */
   .stat {
-    background-color: var(--tile);
-    border: 1px solid var(--line);
+    background-color: color-mix(in oklab, var(--tile) var(--glass-tint), transparent);
+    backdrop-filter: blur(var(--glass-blur)) saturate(1.7);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.7);
+    border: 1px solid var(--glass-edge);
     border-radius: var(--r-tile);
+    box-shadow:
+      var(--shadow-sm),
+      inset 0 1px 0 0 var(--glass-sheen);
     padding: 0.9rem 1rem 1rem;
   }
 
-  /* Frosted chrome — used only where content must scroll beneath. */
-  .frost {
-    background-color: color-mix(in oklab, var(--ground) 78%, transparent);
-    backdrop-filter: blur(20px) saturate(1.6);
-    -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  /* Frosted chrome — bars that content scrolls underneath. Heavier blur and
+     a higher tint than a card, because text has to stay readable while a
+     photograph slides past behind it. */
+  .frost,
+  .glass-bar {
+    background-color: color-mix(in oklab, var(--ground) 72%, transparent);
+    backdrop-filter: blur(26px) saturate(1.8);
+    -webkit-backdrop-filter: blur(26px) saturate(1.8);
   }
 
   .frost-tile {
-    background-color: color-mix(in oklab, var(--tile) 82%, transparent);
-    backdrop-filter: blur(24px) saturate(1.7);
-    -webkit-backdrop-filter: blur(24px) saturate(1.7);
+    background-color: color-mix(in oklab, var(--tile) 78%, transparent);
+    backdrop-filter: blur(26px) saturate(1.8);
+    -webkit-backdrop-filter: blur(26px) saturate(1.8);
+  }
+
+  /* Where backdrop-filter is unavailable the surface must still be opaque
+     enough to read against, so fall back to a solid fill. */
+  @supports not (backdrop-filter: blur(1px)) {
+    .glass,
+    .tile,
+    .stat,
+    .frost,
+    .glass-bar,
+    .frost-tile {
+      background-color: var(--tile);
+    }
   }
 
   .hairline {

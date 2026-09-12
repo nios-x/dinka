@@ -37,6 +37,10 @@ export function CountsProvider({ children }: { children: React.ReactNode }) {
   const refresh = useCallback(async () => {
     if (status !== "authenticated") return;
     try {
+      // The same tick doubles as the presence heartbeat: it already runs only
+      // while the tab is visible, and its interval is inside the online window.
+      void fetch("/api/v1/presence", { method: "POST" }).catch(() => {});
+
       const res = await fetch("/api/v1/counts", { cache: "no-store" });
       if (!res.ok) return;
       const data = await res.json();

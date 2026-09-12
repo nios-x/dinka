@@ -26,6 +26,7 @@ export async function GET(req: NextRequest) {
           username: true,
           pic: true,
           email: true,
+          lastSeenAt: true,
         },
       },
       to: {
@@ -35,6 +36,7 @@ export async function GET(req: NextRequest) {
           username: true,
           pic: true,
           email: true,
+          lastSeenAt: true,
         },
       },
     },

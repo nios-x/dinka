@@ -156,6 +156,35 @@ export const authOptions: AuthOptions = {
       if (token?.email) session.user.email = token.email;
       //@ts-ignore
       if (token?.id) session.user.id = token.id;
+
+      // The picture and name come from the database, not from the OAuth token.
+      // Once someone uploads their own picture, `pic` must win over the one
+      // Google supplied at sign-in — otherwise the nav and dock keep showing
+      // the old avatar until the token expires.
+      const id = (token as any)?.id as string | undefined;
+      const email = (token as any)?.email as string | undefined;
+
+      if (id || email) {
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: id ? { id } : { email: email! },
+            select: { id: true, name: true, pic: true, image: true, username: true },
+          });
+          if (dbUser) {
+            //@ts-ignore
+            session.user.id = dbUser.id;
+            //@ts-ignore
+            session.user.name = dbUser.name ?? session.user.name;
+            //@ts-ignore
+            session.user.image = dbUser.pic || dbUser.image || session.user.image;
+            //@ts-ignore
+            session.user.username = dbUser.username;
+          }
+        } catch {
+          // A lookup failure leaves the token's values in place.
+        }
+      }
+
       return session;
     },
   },
