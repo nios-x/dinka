@@ -42,10 +42,10 @@ export default function PageHeader({
     publish();
     const ro = new ResizeObserver(publish);
     ro.observe(el);
-    return () => {
-      ro.disconnect();
-      root.style.removeProperty("--page-header-h");
-    };
+    // The value is deliberately left in place on unmount. During a route
+    // change both headers can be mounted at once, and clearing it here would
+    // wipe the incoming header's measurement and drop the offset to zero.
+    return () => ro.disconnect();
   }, []);
 
   return (

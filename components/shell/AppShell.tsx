@@ -22,14 +22,32 @@ import Composer from "@/components/composer/Composer";
  */
 
 const BARE = [/^\/login/, /^\/signup/, /^\/call\//];
+/** Reachable signed out: the marketing page and the two documents it links to. */
+const PUBLIC = [/^\/$/, /^\/privacy-policy/, /^\/terms-of-service/];
 const NO_DOCK = [/^\/chat(\?|$)/, /^\/story\//, /^\/reels/];
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? "/";
+  const router = useRouter();
   const { status } = useSession();
 
   const bare = BARE.some((r) => r.test(pathname));
   const signedIn = status === "authenticated";
+  const publicRoute = bare || PUBLIC.some((r) => r.test(pathname));
+
+  /**
+   * An interior route reached while signed out.
+   *
+   * Without this the page renders its chrome-less shell and every request it
+   * makes comes back 401, which looks like an empty account rather than a
+   * missing session. Sending them to sign-in with the route in `next` means
+   * they land where they were going.
+   */
+  React.useEffect(() => {
+    if (status !== "unauthenticated" || publicRoute) return;
+    router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+  }, [status, publicRoute, pathname, router]);
+
   // A signed-out visitor gets the marketing page with no app chrome around it.
   const chrome = signedIn && !bare;
 

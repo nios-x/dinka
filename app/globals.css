@@ -424,20 +424,22 @@
     padding: 0.9rem 1rem 1rem;
   }
 
-  /* Frosted chrome — bars that content scrolls underneath. Heavier blur and
-     a higher tint than a card, because text has to stay readable while a
-     photograph slides past behind it. */
+  /* Frosted chrome — bars that content scrolls underneath. The tint is kept
+     light enough that the blur actually reads: past roughly 70% the fill is
+     effectively paint, and the backdrop-filter behind it costs a compositor
+     pass for something nobody can see. Text stays legible because the blur
+     flattens whatever slides underneath into an even wash. */
   .frost,
   .glass-bar {
-    background-color: color-mix(in oklab, var(--ground) 72%, transparent);
-    backdrop-filter: blur(26px) saturate(1.8);
-    -webkit-backdrop-filter: blur(26px) saturate(1.8);
+    background-color: color-mix(in oklab, var(--ground) 58%, transparent);
+    backdrop-filter: blur(28px) saturate(1.8);
+    -webkit-backdrop-filter: blur(28px) saturate(1.8);
   }
 
   .frost-tile {
-    background-color: color-mix(in oklab, var(--tile) 78%, transparent);
-    backdrop-filter: blur(26px) saturate(1.8);
-    -webkit-backdrop-filter: blur(26px) saturate(1.8);
+    background-color: color-mix(in oklab, var(--tile) 64%, transparent);
+    backdrop-filter: blur(28px) saturate(1.8);
+    -webkit-backdrop-filter: blur(28px) saturate(1.8);
   }
 
   /* Where backdrop-filter is unavailable the surface must still be opaque
