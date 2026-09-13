@@ -8,6 +8,7 @@ import {
   User,
   Palette,
   Shield,
+  VolumeX,
   LogOut,
   Camera,
   Loader2,
@@ -21,6 +22,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import PageHeader from "@/components/shell/PageHeader";
+import MutedAccounts from "@/components/settings/MutedAccounts";
 import { Avatar } from "@/components/ui/avatar";
 import {
   AlertDialog,
@@ -351,6 +353,15 @@ export default function Page() {
               </button>
             ))}
           </div>
+        </Section>
+
+        {/* ── Muted ── */}
+        <Section
+          icon={<VolumeX size={16} />}
+          title="Muted accounts"
+          note="Their posts stay out of your feed. They are never told."
+        >
+          <MutedAccounts />
         </Section>
 
         {/* ── Account ── */}

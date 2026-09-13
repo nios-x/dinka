@@ -50,8 +50,12 @@
   /* ── Ink: near-black with a warm cast ── */
   --ink: #17130f;
   --ink-2: #55504a;
-  --ink-3: #8a847c;
-  --ink-4: #aaa49b;
+  /* Handles, timestamps and every secondary label in the feed are this colour.
+     At #8a847c it measured 3.2:1 on the post surface — under the 4.5:1 that
+     text this size needs, and the source of most of the "washed out" quality
+     the product had. This clears AA with the warm cast intact. */
+  --ink-3: #6f6a62;
+  --ink-4: #938d84;
 
   /* ── Hairlines ── */
   --line: #e7e3dc;
@@ -147,8 +151,10 @@
 
   --ink: #f4f3f1;
   --ink-2: #b6b2ad;
-  --ink-3: #86827d;
-  --ink-4: #625f5b;
+  /* Measured against the dark post surface, #86827d came out at 4.47:1 —
+     close enough to AA to look fine and still under it. This clears 5:1. */
+  --ink-3: #8e8a84;
+  --ink-4: #6b6862;
 
   --line: #26262b;
   --line-strong: #36363d;

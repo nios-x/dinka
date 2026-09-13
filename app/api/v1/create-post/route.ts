@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import cloudinary from "@/lib/cloudinary";
 import { requireUser } from "@/lib/auth";
+import { limit } from "@/lib/rate-limit";
 import { indexHashtags, notify, notifyMentions, postInclude, serializePost } from "@/lib/social";
 import type { PostKind, Viewers } from "@/generated/prisma";
 
@@ -16,6 +17,11 @@ import type { PostKind, Viewers } from "@/generated/prisma";
 export const POST = async (req: NextRequest) => {
   const { userId, error } = await requireUser();
   if (error) return error;
+
+  // Fifteen posts in ten minutes is far past enthusiastic and well short of
+  // anything a person does by hand.
+  const limited = limit(req, { key: "create-post", limit: 15, windowSeconds: 600, userId });
+  if (limited) return limited;
 
   try {
     const form = await req.formData();

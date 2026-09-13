@@ -54,19 +54,40 @@ model User {
   collections  Collection[]
   pollVotes    PollVote[]
   commentLikes CommentLike[]
+  reportsFiled Report[]      @relation("ReportsFiled")
+  mutes        Mute[]        @relation("Mutes")
+  mutedBy      Mute[]        @relation("MutedBy")
 
   @@index([createdAt])
   @@index([lastSeenAt])
   @@index([username])
 }
 
+/// One pending email code.
+///
+/// `otp` holds a bcrypt hash, never the digits: this table is readable by
+/// anything with database access, and a plaintext code there is a standing
+/// account-takeover kit for every signup in flight.
+///
+/// `attempts` is the cap that actually holds. The in-memory rate limiter is the
+/// cheap first line, but it resets on cold start and counts per instance; a
+/// six-digit code needs a limit that survives both.
 model OTPTable {
-  id     Int      @id @default(autoincrement())
-  email  String   @unique
-  otp    String
-  expiry DateTime @default(now())
+  id       Int        @id @default(autoincrement())
+  email    String     @unique
+  otp      String
+  expiry   DateTime   @default(now())
+  attempts Int        @default(0)
+  purpose  OtpPurpose @default(Signup)
 
   @@index([expiry])
+}
+
+/// What a code entitles the bearer to do. A signup code must never be
+/// spendable on an existing account, and a reset code must never create one.
+enum OtpPurpose {
+  Signup
+  Reset
 }
 
 model Post {
@@ -88,6 +109,16 @@ model Post {
   shareCount  Int      @default(0)
   isSynthetic Boolean  @default(false)
 
+  /// When the author last rewrote the text. Null means never edited, which is
+  /// why this is a timestamp rather than a boolean: a reader deciding whether
+  /// a reply still makes sense needs to know *when* the words changed.
+  editedAt DateTime?
+
+  /// Set once enough distinct people report a post. A hidden post stays in the
+  /// database — its author can still see it, and a human can still reverse the
+  /// call — but it leaves every feed, search result and profile listing.
+  hiddenAt DateTime?
+
   // quote / repost
   repostOfId Int?
   repostOf   Post?  @relation("Reposts", fields: [repostOfId], references: [id], onDelete: Cascade)
@@ -103,8 +134,10 @@ model Post {
   bookmarks Bookmark[]
   hashtags  PostHashtag[]
   poll      Poll?
+  reports   Report[]
 
   @@index([authorId])
+  @@index([hiddenAt])
   @@index([createdAt])
   @@index([isMedia])
   @@index([visiblity])
@@ -428,4 +461,68 @@ enum NotificationType {
   Repost
   StoryReply
   System
+}
+
+/// A report filed by one person against one post.
+///
+/// The product used to answer the Report button with a toast and write nothing
+/// down. This table is the difference between telling someone their report was
+/// received and it having been received.
+///
+/// Unique on (reporter, post) so a single account cannot manufacture a
+/// takedown by reporting the same thing repeatedly — the auto-hide threshold
+/// counts distinct people, and this is what makes that count mean something.
+model Report {
+  id         Int          @id @default(autoincrement())
+  reporterId String
+  reporter   User         @relation("ReportsFiled", fields: [reporterId], references: [id], onDelete: Cascade)
+  postId     Int
+  post       Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  reason     ReportReason
+  detail     String?
+  status     ReportStatus @default(Open)
+  createdAt  DateTime     @default(now())
+
+  @@unique([reporterId, postId])
+  @@index([status, createdAt])
+  @@index([postId])
+}
+
+enum ReportReason {
+  Spam
+  Harassment
+  Hate
+  Violence
+  SelfHarm
+  Nudity
+  Misinformation
+  Other
+}
+
+enum ReportStatus {
+  Open
+  Reviewed
+  Dismissed
+}
+
+/// One person muting another.
+///
+/// Deliberately not a third value in `Relationship`: that table is unique on
+/// (srcid, destid) and holds a single type per pair, so recording a mute there
+/// would overwrite the follow — silently unfollowing the person you meant to
+/// merely quieten. Muting and following are independent facts and need
+/// independent rows.
+///
+/// Nobody is ever told they have been muted. That is the entire difference
+/// between this and blocking.
+model Mute {
+  id        Int      @id @default(autoincrement())
+  muterId   String
+  mutedId   String
+  createdAt DateTime @default(now())
+  muter     User     @relation("Mutes", fields: [muterId], references: [id], onDelete: Cascade)
+  muted     User     @relation("MutedBy", fields: [mutedId], references: [id], onDelete: Cascade)
+
+  @@unique([muterId, mutedId])
+  @@index([muterId])
 }

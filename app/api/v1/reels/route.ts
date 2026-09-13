@@ -16,6 +16,7 @@ export async function GET(req: NextRequest) {
 
   const posts = await prisma.post.findMany({
     where: {
+      hiddenAt: null,
       visiblity: "Public",
       isMedia: true,
       authorId: { notIn: blocked.length ? blocked : ["__none__"] },

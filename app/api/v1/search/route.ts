@@ -31,6 +31,7 @@ export async function GET(req: NextRequest) {
     }),
     prisma.post.findMany({
       where: {
+        hiddenAt: null,
         visiblity: "Public",
         authorId: { notIn: blocked.length ? blocked : ["__none__"] },
         title: { contains: q, mode: "insensitive" },

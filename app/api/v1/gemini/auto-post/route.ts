@@ -3,7 +3,32 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { generatePostContent } from "@/lib/gemini";
 
+/**
+ * The scheduled bot post.
+ *
+ * This is a machine, not a person: it creates a row in `User`, calls a metered
+ * model and writes to the public feed. It ran unauthenticated, which meant
+ * anyone holding the URL could spend the project's Gemini budget and fill the
+ * timeline. It now answers only to a caller that knows `CRON_SECRET`.
+ *
+ * With no secret configured the endpoint refuses everything rather than
+ * falling open — a missing environment variable must not be the thing standing
+ * between a stranger and the billing account.
+ */
+function authorized(req: Request): boolean {
+    const secret = process.env.CRON_SECRET;
+    if (!secret) return false;
+
+    const header = req.headers.get("authorization") ?? "";
+    const token = header.startsWith("Bearer ") ? header.slice(7) : req.headers.get("x-cron-secret");
+    return token === secret;
+}
+
 export async function POST(req: Request) {
+    if (!authorized(req)) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     try {
         // 1. Check if Gemini user exists
         let geminiUser = await prisma.user.findFirst({

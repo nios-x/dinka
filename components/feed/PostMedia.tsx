@@ -4,6 +4,7 @@ import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Play, Volume2, VolumeX } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { isVideo as isVideoUrl } from "@/lib/media";
 import { LoveGlyph } from "./ReactionGlyph";
 
 /**
@@ -38,7 +39,10 @@ export default function PostMedia({
   const lastTap = React.useRef(0);
   const videoRef = React.useRef<HTMLVideoElement>(null);
 
-  const isVideo = (type ?? "").startsWith("video") || /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url);
+  // One definition of "is this a video", shared with every other surface that
+  // has to decide between <img> and <video> — a local regex here drifts from
+  // the one in lib/media the first time a format is added.
+  const video = isVideoUrl(url, type);
 
   // Clamp the reserved box: very tall images get cropped rather than taking
   // over the whole screen, very wide ones keep a readable minimum height.
@@ -72,7 +76,7 @@ export default function PostMedia({
     >
       {!loaded && <div className="skeleton absolute inset-0" aria-hidden />}
 
-      {isVideo ? (
+      {video ? (
         <>
           <video
             ref={videoRef}

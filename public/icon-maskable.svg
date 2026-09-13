@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="512" height="512" role="img" aria-label="Dinka">
+  <title>Dinka</title>
+  <!-- Maskable: the mark is scaled into the safe zone (the middle 80%) so a
+       platform cropping this to a circle or a squircle never clips it. -->
+  <rect width="32" height="32" fill="#f4f1ec"/>
+  <g transform="translate(16 16) scale(0.66) translate(-16 -16)">
+    <path d="M16 3.2a12.8 12.8 0 1 1-9.05 3.75" stroke="#17130f" stroke-width="3.4" stroke-linecap="round" fill="none"/>
+    <circle cx="16" cy="16" r="4.6" fill="#17130f"/>
+  </g>
+</svg>

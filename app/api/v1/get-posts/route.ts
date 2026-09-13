@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { authOptions } from "@/pages/api/auth/[...nextauth]";
 import { getServerSession } from "next-auth";
-import { blockedIds, followingIds, postInclude, serializePost } from "@/lib/social";
+import { blockedIds, followingIds, mutedIds, postInclude, serializePost } from "@/lib/social";
 
 /**
  * The feed.
@@ -29,13 +29,27 @@ export const GET = async (req: NextRequest) => {
   if (!currentUser) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
   const viewerId = currentUser.id;
-  const [following, blocked] = await Promise.all([followingIds(viewerId), blockedIds(viewerId)]);
+  const [following, blocked, muted] = await Promise.all([
+    followingIds(viewerId),
+    blockedIds(viewerId),
+    mutedIds(viewerId),
+  ]);
 
+  // Blocked and muted are both "not in my feed"; they differ in everything
+  // else, which is why they are gathered separately and merged only here.
+  const excluded = [...new Set([...blocked, ...muted])];
+
+  // A post hidden by reports leaves every listing. The author still sees it
+  // on their own profile, which is handled where that query is built.
   const where =
     tab === "following"
-      ? { authorId: { in: following.filter((id) => !blocked.includes(id)) } }
+      ? {
+          hiddenAt: null,
+          authorId: { in: following.filter((id) => !excluded.includes(id)) },
+        }
       : {
-          authorId: { notIn: blocked.length ? blocked : ["__none__"] },
+          hiddenAt: null,
+          authorId: { notIn: excluded.length ? excluded : ["__none__"] },
           // Outside your own graph, follower-only posts are not yours to read.
           OR: [{ visiblity: "Public" as const }, { authorId: { in: following } }],
         };

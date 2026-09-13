@@ -116,12 +116,17 @@ export function LoginForm({ className }: { className?: string }) {
         </div>
 
         <div>
-          {/* There is no password-reset route behind the product yet, and a
-              "Forgot it?" link that 404s is worse than no link at all. Restore
-              this the moment a reset flow exists. */}
-          <label htmlFor="password" className="mb-1.5 block text-[0.82rem] font-semibold text-ink-2">
-            Password
-          </label>
+          <div className="mb-1.5 flex items-baseline justify-between gap-3">
+            <label htmlFor="password" className="block text-[0.82rem] font-semibold text-ink-2">
+              Password
+            </label>
+            <Link
+              href="/forgot"
+              className="text-[0.8rem] font-semibold text-ink-3 transition-colors hover:text-ink"
+            >
+              Forgot it?
+            </Link>
+          </div>
           <div className="relative">
             <input
               id="password"

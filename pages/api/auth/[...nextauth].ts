@@ -3,6 +3,7 @@ import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcrypt";
+import { verifyOtp } from "@/lib/otp";
 
 export const authOptions: AuthOptions = {
   providers: [
@@ -17,12 +18,14 @@ export const authOptions: AuthOptions = {
         if (!credentials?.email || !credentials?.password) return null;
 
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+          where: { email: credentials.email.trim().toLowerCase() },
         });
 
-        if (!user || user.provider !== "Email") return null;
+        // A Google account has no password row. Comparing against it would
+        // throw rather than return a clean failure.
+        if (!user || user.provider !== "Email" || !user.password) return null;
 
-        const isValid = await bcrypt.compare(credentials.password, user.password!);
+        const isValid = await bcrypt.compare(credentials.password, user.password);
         if (!isValid) return null;
 
         return {
@@ -43,40 +46,86 @@ export const authOptions: AuthOptions = {
         otp: { label: "OTP", type: "text" },
         password: { label: "Password", type: "text" },
       },
+      /**
+       * Signup only.
+       *
+       * This provider used to sign the caller into an account that already
+       * existed, on nothing but a six-digit code — and it compared that code
+       * as plaintext with no attempt limit. The only thing preventing takeover
+       * was that signup refuses to issue a code for a known address, which is
+       * a single check standing between a stranger and every account.
+       *
+       * It now creates accounts and nothing else. Getting into an account you
+       * already own goes through `email-reset`, which demands a code issued
+       * for that purpose. Neither code is spendable on the other's job.
+       */
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.otp || !credentials?.password) return null;
+        if (credentials.password.length < 8) return null;
 
-        const otpRecord = await prisma.oTPTable.findFirst({
-          where: {
-            email: credentials.email,
-            otp: credentials.otp,
-            expiry: { gt: new Date(Date.now() - 5 * 60 * 1000) }, // valid for 5 minutes
+        const email = credentials.email.trim().toLowerCase();
+
+        // Checked before the code is spent: a code issued for a since-created
+        // address must not be usable, and this flow may only ever create.
+        const existing = await prisma.user.findUnique({ where: { email }, select: { id: true } });
+        if (existing) return null;
+
+        const result = await verifyOtp(email, credentials.otp, "Signup");
+        if (!result.ok) return null;
+
+        const hashedPassword = await bcrypt.hash(credentials.password, 10);
+
+        const user = await prisma.user.create({
+          data: {
+            email,
+            provider: "Email",
+            password: hashedPassword,
+            emailVerified: new Date(),
           },
         });
-        if (!otpRecord) return null;
 
-        let user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        });
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          image: user.image,
+          provider: user.provider,
+        };
+      },
+    }),
 
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(credentials.password, salt);
+    CredentialsProvider({
+      id: "email-reset",
+      name: "Reset password",
+      credentials: {
+        email: { label: "Email", type: "text" },
+        otp: { label: "OTP", type: "text" },
+        password: { label: "New password", type: "password" },
+      },
+      /**
+       * Password reset: set a new password with a code, then sign in.
+       *
+       * Only spends codes issued as `Reset`, and only against an account that
+       * exists and signs in with a password — a Google account has no password
+       * to reset, and letting a code set one would be a second door into it.
+       */
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.otp || !credentials?.password) return null;
+        if (credentials.password.length < 8) return null;
 
-        if (!user) {
-          user = await prisma.user.create({
-            data: {
-              email: credentials.email,
-              provider: "Email",
-              password: hashedPassword,
-            },
-          });
-        }
+        const email = credentials.email.trim().toLowerCase();
 
-        await prisma.oTPTable.deleteMany({
-          where: {
-            email: credentials.email,
-            expiry: { lt: new Date() },
-          },
+        const user = await prisma.user.findUnique({ where: { email } });
+        if (!user || user.provider !== "Email") return null;
+
+        const result = await verifyOtp(email, credentials.otp, "Reset");
+        if (!result.ok) return null;
+
+        const hashedPassword = await bcrypt.hash(credentials.password, 10);
+
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { password: hashedPassword, emailVerified: user.emailVerified ?? new Date() },
         });
 
         return {

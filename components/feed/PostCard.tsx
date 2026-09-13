@@ -12,6 +12,8 @@ import {
   Trash2,
   Link2,
   Flag,
+  Pencil,
+  VolumeX,
   Sparkles,
   MapPin,
   BadgeCheck,
@@ -41,6 +43,8 @@ import type { ReactionKey } from "@/lib/reactions";
 import RichText from "./RichText";
 import PostMedia from "./PostMedia";
 import PollCard from "./PollCard";
+import ReportDialog from "./ReportDialog";
+import EditPostDialog from "./EditPostDialog";
 import ReactionBar from "./ReactionBar";
 import { RepostIcon } from "@/components/icons";
 import { openComposer } from "@/components/composer/composer-bus";
@@ -73,6 +77,11 @@ export default function PostCard({
   const { data: session } = useSession();
   const router = useRouter();
   const [confirmDelete, setConfirmDelete] = React.useState(false);
+  const [reporting, setReporting] = React.useState(false);
+  const [editing, setEditing] = React.useState(false);
+  // The edit lands here first so the card updates the moment it saves, rather
+  // than waiting for whichever list owns this post to refetch.
+  const [edited, setEdited] = React.useState<{ title: string; editedAt: string } | null>(null);
 
   /**
    * Opening the post from anywhere on the card.
@@ -95,6 +104,12 @@ export default function PostCard({
     router.push(`/postid/${post.id}`);
   };
 
+  // What this card is showing right now: the post as loaded, unless an edit
+  // was saved from here, in which case that is newer than whatever the list
+  // handed down.
+  const body = edited?.title ?? post.title;
+  const editedAt = edited?.editedAt ?? post.editedAt ?? null;
+
   const me = (session?.user as { id?: string } | undefined)?.id;
   const isAuthor = !!me && me === post.authorId;
   const author = post.author ?? { name: "Someone" };
@@ -104,7 +119,7 @@ export default function PostCard({
     const url = `${window.location.origin}/postid/${post.id}`;
     const payload = {
       title: `${author.name ?? "Someone"} on Dinka`,
-      text: post.title?.slice(0, 120),
+      text: body?.slice(0, 120),
       url,
     };
     try {
@@ -122,6 +137,22 @@ export default function PostCard({
     } catch (err: any) {
       // A cancelled share sheet is not an error worth reporting.
       if (err?.name !== "AbortError") toast.error("Could not share that post");
+    }
+  };
+
+  const mute = async () => {
+    try {
+      const res = await fetch("/api/v1/users/mute", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetId: post.authorId, muted: true }),
+      });
+      if (!res.ok) throw new Error();
+      // Said plainly, because the whole point of muting is that the other
+      // person is not told and nothing else about the relationship changes.
+      toast.success(`Muted ${author.name ?? "that account"} — they won't know`);
+    } catch {
+      toast.error("Could not mute that account");
     }
   };
 
@@ -199,6 +230,17 @@ export default function PostCard({
                 </time>
                 <span className="sr-only"> — open this post</span>
               </Link>
+              {editedAt && (
+                <>
+                  <span aria-hidden>·</span>
+                  <span
+                    className="shrink-0"
+                    title={`Edited ${new Date(editedAt).toLocaleString()}`}
+                  >
+                    edited
+                  </span>
+                </>
+              )}
               <span aria-hidden>·</span>
               {post.visiblity === "Public" ? (
                 <Globe size={11} aria-label="Public" />
@@ -237,9 +279,21 @@ export default function PostCard({
                 {post.isBookmarked ? "Remove from saved" : "Save post"}
               </DropdownMenuItem>
               {!isAuthor && (
-                <DropdownMenuItem onClick={() => toast.success("Thanks — we'll take a look")}>
-                  <Flag size={15} />
-                  Report
+                <>
+                  <DropdownMenuItem onClick={mute}>
+                    <VolumeX size={15} />
+                    Mute {author.name ?? "this account"}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setReporting(true)}>
+                    <Flag size={15} />
+                    Report
+                  </DropdownMenuItem>
+                </>
+              )}
+              {isAuthor && (
+                <DropdownMenuItem onClick={() => setEditing(true)}>
+                  <Pencil size={15} />
+                  Edit post
                 </DropdownMenuItem>
               )}
               {isAuthor && onDelete && (
@@ -258,15 +312,15 @@ export default function PostCard({
           </DropdownMenu>
         </header>
 
-        {post.title && (
+        {body && (
           // The card is clickable, but its words are still words: the caret
           // over the body says the text can be selected.
           <div className="cursor-text px-4 pb-3">
             {detail ? (
-              <RichText className="text-[1.05rem] leading-[1.6] text-ink">{post.title}</RichText>
+              <RichText className="text-[1.05rem] leading-[1.6] text-ink">{body}</RichText>
             ) : (
               <RichText clamp={6} className="text-[0.975rem] leading-[1.6] text-ink">
-                {post.title}
+                {body}
               </RichText>
             )}
           </div>
@@ -366,6 +420,16 @@ export default function PostCard({
         )}
 
       </article>
+
+      <ReportDialog postId={post.id} open={reporting} onOpenChange={setReporting} />
+
+      <EditPostDialog
+        postId={post.id}
+        initialText={body}
+        open={editing}
+        onOpenChange={setEditing}
+        onSaved={setEdited}
+      />
 
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>

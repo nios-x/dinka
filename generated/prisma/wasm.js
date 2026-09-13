@@ -150,7 +150,9 @@ exports.Prisma.OTPTableScalarFieldEnum = {
   id: 'id',
   email: 'email',
   otp: 'otp',
-  expiry: 'expiry'
+  expiry: 'expiry',
+  attempts: 'attempts',
+  purpose: 'purpose'
 };
 
 exports.Prisma.PostScalarFieldEnum = {
@@ -169,6 +171,8 @@ exports.Prisma.PostScalarFieldEnum = {
   viewCount: 'viewCount',
   shareCount: 'shareCount',
   isSynthetic: 'isSynthetic',
+  editedAt: 'editedAt',
+  hiddenAt: 'hiddenAt',
   repostOfId: 'repostOfId'
 };
 
@@ -315,6 +319,23 @@ exports.Prisma.ChatsScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.ReportScalarFieldEnum = {
+  id: 'id',
+  reporterId: 'reporterId',
+  postId: 'postId',
+  reason: 'reason',
+  detail: 'detail',
+  status: 'status',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.MuteScalarFieldEnum = {
+  id: 'id',
+  muterId: 'muterId',
+  mutedId: 'mutedId',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -332,6 +353,11 @@ exports.Prisma.NullsOrder = {
 exports.Provider = exports.$Enums.Provider = {
   Google: 'Google',
   Email: 'Email'
+};
+
+exports.OtpPurpose = exports.$Enums.OtpPurpose = {
+  Signup: 'Signup',
+  Reset: 'Reset'
 };
 
 exports.Viewers = exports.$Enums.Viewers = {
@@ -386,6 +412,23 @@ exports.ChatType = exports.$Enums.ChatType = {
   VideoCall: 'VideoCall'
 };
 
+exports.ReportReason = exports.$Enums.ReportReason = {
+  Spam: 'Spam',
+  Harassment: 'Harassment',
+  Hate: 'Hate',
+  Violence: 'Violence',
+  SelfHarm: 'SelfHarm',
+  Nudity: 'Nudity',
+  Misinformation: 'Misinformation',
+  Other: 'Other'
+};
+
+exports.ReportStatus = exports.$Enums.ReportStatus = {
+  Open: 'Open',
+  Reviewed: 'Reviewed',
+  Dismissed: 'Dismissed'
+};
+
 exports.Prisma.ModelName = {
   User: 'User',
   OTPTable: 'OTPTable',
@@ -406,7 +449,9 @@ exports.Prisma.ModelName = {
   Relations: 'Relations',
   Notification: 'Notification',
   SeenPost: 'SeenPost',
-  Chats: 'Chats'
+  Chats: 'Chats',
+  Report: 'Report',
+  Mute: 'Mute'
 };
 
 /**

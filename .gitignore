@@ -44,3 +44,5 @@ next-env.d.ts
 /lib/generated/prisma
 
 certificates
+# Local design-preview route — never ship it.
+app/zz-preview/

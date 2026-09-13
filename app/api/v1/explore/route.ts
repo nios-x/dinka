@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { Prisma } from "@/generated/prisma";
 import prisma from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
-import { blockedIds, postInclude, serializePost } from "@/lib/social";
+import { blockedIds, mutedIds, postInclude, serializePost } from "@/lib/social";
 
 /**
  * Explore.
@@ -23,12 +23,14 @@ export async function GET(req: NextRequest) {
   const filter = searchParams.get("filter") ?? "all";
   const take = 18;
 
-  const blocked = await blockedIds(userId);
+  const [blocked, muted] = await Promise.all([blockedIds(userId), mutedIds(userId)]);
+  const excluded = [...new Set([...blocked, ...muted])];
   const since = new Date(Date.now() - 14 * 86_400_000);
 
   const where: Prisma.PostWhereInput = {
+    hiddenAt: null,
     visiblity: "Public",
-    authorId: { notIn: blocked.length ? blocked : ["__none__"] },
+    authorId: { notIn: excluded.length ? excluded : ["__none__"] },
     isMedia: true,
     mediaurl: { not: null },
   };

@@ -35,6 +35,7 @@ import { useCounts } from "@/app/Providers/CountsProvider";
 import { clock, dayLabel, handleOf } from "@/lib/format";
 import { isOnline, presenceLabel } from "@/lib/presence";
 import { cn } from "@/lib/utils";
+import { isVideo as isVideoUrl, still } from "@/lib/media";
 
 /**
  * A conversation.
@@ -286,7 +287,7 @@ function Thread() {
         </div>
       </div>
 
-      <footer className="safe-b shrink-0 border-t border-line bg-tile px-3 py-2.5">
+      <footer className="shrink-0 border-t border-line bg-tile px-3 py-2.5 pb-[calc(env(safe-area-inset-bottom,0px)+0.625rem)]">
         {preview && (
           <div className="relative mb-2 inline-block">
             {file?.type.startsWith("video") ? (
@@ -398,7 +399,7 @@ function Bubble({
   onLongPress: () => void;
 }) {
   const longPress = useLongPress({ onLongPress, delay: 450 });
-  const isVideo = chat.mediaUrl?.includes("/video/") || /\.(mp4|webm|mov)(\?|$)/i.test(chat.mediaUrl ?? "");
+  const video = isVideoUrl(chat.mediaUrl);
 
   if (chat.type === "Call" || chat.type === "VideoCall") {
     return (
@@ -431,11 +432,15 @@ function Bubble({
       >
         {chat.mediaUrl && (
           <div className="-mx-4 -mt-2.5 mb-2.5">
-            {isVideo ? (
+            {video ? (
               <video src={chat.mediaUrl} controls playsInline className="max-h-72 w-full object-cover" />
             ) : (
               /* eslint-disable-next-line @next/next/no-img-element */
-              <img src={chat.mediaUrl} alt="Attachment" className="max-h-72 w-full object-cover" />
+              <img
+                src={still(chat.mediaUrl, 720) ?? chat.mediaUrl}
+                alt="Attachment"
+                className="max-h-72 w-full object-cover"
+              />
             )}
           </div>
         )}

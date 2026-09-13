@@ -136,6 +136,22 @@ export async function blockedIds(userId: string): Promise<string[]> {
   return [...out];
 }
 
+/**
+ * Accounts this person has muted.
+ *
+ * Separate from `blockedIds` because the two mean different things and apply in
+ * different places: a block is mutual and hides both directions everywhere, a
+ * mute is one-way, invisible to the other person, and applies only to the
+ * feeds — their profile still opens, and a link to their post still works.
+ */
+export async function mutedIds(userId: string): Promise<string[]> {
+  const rows = await prisma.mute.findMany({
+    where: { muterId: userId },
+    select: { mutedId: true },
+  });
+  return rows.map((r) => r.mutedId);
+}
+
 /** The reaction tally for a set of posts, shaped for the client. */
 export function tallyReactions(
   rows: { postId: number; type: string }[]
@@ -186,6 +202,7 @@ export function serializePost(post: any, viewerId: string) {
     kind: post.kind,
     visiblity: post.visiblity,
     createdAt: post.createdAt,
+    editedAt: post.editedAt ?? null,
     isMedia: post.isMedia,
     mediaurl: post.mediaurl,
     mediaType: post.mediaType,

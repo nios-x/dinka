@@ -20,6 +20,8 @@ export type FeedPost = {
   kind: "Text" | "Image" | "Video" | "Reel" | "Poll" | "Repost";
   visiblity: "Public" | "Followers";
   createdAt: string;
+  /** Null unless the author has rewritten the text since posting. */
+  editedAt?: string | null;
   isMedia: boolean;
   mediaurl: string | null;
   mediaType?: string | null;

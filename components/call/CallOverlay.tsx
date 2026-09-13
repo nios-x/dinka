@@ -369,7 +369,7 @@ export function CallScreen({
       </div>
 
       {/* Controls */}
-      <div className="safe-b flex shrink-0 items-center justify-center gap-4 stage px-6 py-7">
+      <div className="stage flex shrink-0 items-center justify-center gap-4 px-6 py-7 pb-[calc(env(safe-area-inset-bottom,0px)+1.75rem)]">
         <ControlButton
           label={micOn ? "Mute your microphone" : "Unmute your microphone"}
           onClick={onToggleMic}

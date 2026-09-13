@@ -56,6 +56,10 @@ export async function POST(req: NextRequest) {
   const posts = await prisma.post.findMany({
     where: {
       authorId: id,
+      // Your own hidden posts stay visible to you: an automatic call made by
+      // three strangers should not make your own writing disappear from your
+      // profile without a word.
+      ...(isMe ? {} : { hiddenAt: null }),
       ...(tab === "media" ? { isMedia: true } : {}),
       ...(tab === "reposts" ? { kind: "Repost" } : {}),
       ...(canSeeFollowersOnly ? {} : { visiblity: "Public" }),

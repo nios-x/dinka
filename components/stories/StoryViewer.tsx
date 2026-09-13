@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Avatar } from "@/components/ui/avatar";
 import { compact, shortAgo } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { still } from "@/lib/media";
 import type { StoryGroup } from "./types";
 
 /**
@@ -192,7 +193,11 @@ export default function StoryViewer({
             />
           ) : story.mediaUrl ? (
             /* eslint-disable-next-line @next/next/no-img-element */
-            <img src={story.mediaUrl} alt={story.caption ?? "Story"} className="h-full w-full object-contain" />
+            <img
+              src={still(story.mediaUrl, 1080) ?? story.mediaUrl}
+              alt={story.caption ?? "Story"}
+              className="h-full w-full object-contain"
+            />
           ) : (
             <div className="flex h-full w-full items-center justify-center p-10">
               <p

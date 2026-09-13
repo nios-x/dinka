@@ -2,12 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import cloudinary from "@/lib/cloudinary";
 import { requireUser } from "@/lib/auth";
+import { limit } from "@/lib/rate-limit";
 import type { StoryKind } from "@/generated/prisma";
 
 /** Posts a story. Media goes to Cloudinary; text stories carry a gradient. */
 export async function POST(req: NextRequest) {
   const { userId, error } = await requireUser();
   if (error) return error;
+
+  // Each story is an upload, and uploads cost storage and bandwidth per call.
+  const limited = limit(req, { key: "story", limit: 20, windowSeconds: 3600, userId });
+  if (limited) return limited;
 
   try {
     const form = await req.formData();

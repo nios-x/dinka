@@ -1,12 +1,18 @@
 import prisma from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser, readJson } from "@/lib/auth";
+import { limit } from "@/lib/rate-limit";
 import { notify } from "@/lib/social";
 
 /** Follows someone. Idempotent, so a double tap does not 500. */
 export async function POST(req: NextRequest) {
   const { userId, error } = await requireUser();
   if (error) return error;
+
+  // Follow-then-unfollow churn is how growth bots work. A real person does not
+  // follow a new account every minute for an hour.
+  const limited = limit(req, { key: "follow", limit: 60, windowSeconds: 3600, userId });
+  if (limited) return limited;
 
   const body = await readJson<{ friendId: string }>(req);
   const friendId = body?.friendId;

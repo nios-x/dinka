@@ -20,14 +20,46 @@ export async function generateMetadata({
 
   const post = await prisma.post.findUnique({
     where: { id: postId },
-    select: { title: true, author: { select: { name: true } } },
+    select: {
+      title: true,
+      createdAt: true,
+      visiblity: true,
+      hiddenAt: true,
+      author: { select: { name: true, username: true } },
+    },
   });
   if (!post) return { title: "Post not found" };
 
   const author = post.author?.name ?? "Someone";
+  const title = `${author}: “${post.title.slice(0, 60)}”`;
+  const description = post.title.slice(0, 160);
+
+  // A follower-only post is unfurled by platforms that are not signed in and
+  // often not even by the recipient, so its words must not travel in a
+  // preview. The page itself still gates on the follow relation.
+  const isPublic = post.visiblity === "Public" && !post.hiddenAt;
+
+  const shareTitle = isPublic ? title : "A post on Dinka";
+  const shareDescription = isPublic ? description : "Sign in to read this post.";
+
   return {
-    title: `${author}: “${post.title.slice(0, 60)}”`,
-    description: post.title.slice(0, 160),
+    title,
+    description,
+    alternates: { canonical: `/postid/${postId}` },
+    openGraph: {
+      type: "article",
+      title: shareTitle,
+      description: shareDescription,
+      url: `/postid/${postId}`,
+      publishedTime: post.createdAt.toISOString(),
+      authors: author ? [author] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: shareTitle,
+      description: shareDescription,
+    },
+    robots: isPublic ? undefined : { index: false, follow: false },
   };
 }
 

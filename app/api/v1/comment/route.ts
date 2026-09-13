@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireUser, readJson } from "@/lib/auth";
+import { limit } from "@/lib/rate-limit";
 import { notify, notifyMentions } from "@/lib/social";
 
 /**
@@ -13,6 +14,11 @@ import { notify, notifyMentions } from "@/lib/social";
 export async function POST(req: NextRequest) {
   const { userId, error } = await requireUser();
   if (error) return error;
+
+  // Comments are cheaper to write than posts, so the ceiling is higher — but a
+  // reply flood is the classic way to make someone's post unusable.
+  const limited = limit(req, { key: "comment", limit: 30, windowSeconds: 600, userId });
+  if (limited) return limited;
 
   const body = await readJson<{ comment: string; postid: number; parentId?: string | null }>(req);
   const content = (body?.comment ?? "").trim().slice(0, 1000);

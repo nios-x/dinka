@@ -35,15 +35,10 @@ export default function Page() {
     handleVote,
   } = usePostContext();
 
-  // One AI-authored post per session keeps a new, quiet feed from being empty.
-  React.useEffect(() => {
-    if (status !== "authenticated") return;
-    if (sessionStorage.getItem("dinka:seeded")) return;
-    sessionStorage.setItem("dinka:seeded", "1");
-    if (Math.random() < 0.3) {
-      fetch("/api/v1/gemini/auto-post", { method: "POST" }).catch(() => {});
-    }
-  }, [status]);
+  // A feed that seeds itself with machine-written posts whenever someone opens
+  // the app is not a quiet feed made livelier — it is everyone's timeline
+  // filled with things nobody wrote. The endpoint still exists for a real
+  // scheduled job; the page no longer fires it.
 
   if (status === "loading") return <FeedSkeleton count={3} />;
 
